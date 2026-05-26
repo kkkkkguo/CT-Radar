@@ -1,0 +1,2530 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CT Radar - Interactive Prototype</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root {
+      --bg: #f6f8fa;
+      --panel: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --soft: #f8fafc;
+      --blue: #2563eb;
+      --teal: #008892;
+      --green: #10b981;
+      --yellow: #f59e0b;
+      --orange: #ea580c;
+      --red: #ef4444;
+      --shadow: 0 1px 3px 0 rgba(0, 0, 0, .05), 0 1px 2px -1px rgba(0, 0, 0, .05);
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; transition: background .18s ease, border-color .18s ease, color .18s ease, opacity .18s ease; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      font-family: "Plus Jakarta Sans", Inter, sans-serif;
+      letter-spacing: 0;
+      color: var(--text);
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 0 24px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 190px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 800;
+    }
+
+    .brand-name {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--blue);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .header-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .data-as-of {
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .notify {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--orange);
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+
+    .notify svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2.2;
+    }
+
+    .notify:after {
+      content: "";
+      position: absolute;
+      right: 4px;
+      top: 4px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ef4444;
+      border: 1px solid #fff;
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid #d1d5db;
+      position: relative;
+    }
+
+    .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    main {
+      width: min(1200px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 44px;
+    }
+
+    .page { display: none; gap: 24px; }
+    .page.active { display: grid; }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .section-head h1 {
+      font-size: 24px;
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .section-head h2 {
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-pad { padding: 22px 24px; }
+    .panel + .panel { margin-top: 24px; }
+
+    .chip,
+    .control,
+    .btn {
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      padding: 0 12px;
+      white-space: nowrap;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+
+    .dropdown {
+      position: relative;
+      display: inline-flex;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      z-index: 60;
+      display: none;
+      min-width: 180px;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
+    }
+
+    .dropdown-menu.wide { min-width: 240px; }
+
+    .dropdown.open .dropdown-menu {
+      display: grid;
+      gap: 2px;
+    }
+
+    .dropdown-option {
+      width: 100%;
+      min-height: 34px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text);
+      padding: 0 10px;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    .dropdown-option:hover,
+    .dropdown-option.active {
+      background: #eef5ff;
+      color: var(--blue);
+    }
+
+    .check-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      border-radius: 6px;
+      padding: 0 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .check-option:hover { background: #f8fafc; }
+    .check-option input { width: 14px; height: 14px; }
+
+    .dropdown-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 6px;
+      padding: 8px 6px 2px;
+      border-top: 1px solid var(--line);
+    }
+
+    .btn.primary {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue);
+    }
+
+    .btn.ghost {
+      box-shadow: none;
+      background: var(--soft);
+    }
+
+    .muted { color: var(--muted); }
+    .mono { font-family: "SFMono-Regular", Consolas, monospace; }
+    .small { font-size: 12px; }
+
+    .token-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    .token-card {
+      padding: 24px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      cursor: pointer;
+    }
+
+    .token-card:hover,
+    .token-card:focus {
+      border-color: #bfd8ff;
+      box-shadow: 0 10px 26px rgba(81, 152, 251, .14);
+      outline: 0;
+    }
+
+    .token-top,
+    .token-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .token-id {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .token-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      background: #e1fbfa;
+      overflow: hidden;
+      flex: none;
+    }
+
+    .token-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .token-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .token-title h2,
+    .token-title h1 {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: var(--bg);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .rule-tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #eef5ff;
+      color: #1d4ed8;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px 18px;
+      margin: 24px 0 28px;
+    }
+
+    .metric-label {
+      margin: 0 0 4px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .metric-value {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .up { color: #1e2229; }
+    .green { color: #42be93; }
+
+    .gauge {
+      display: grid;
+      justify-items: center;
+      padding: 8px 0 4px;
+    }
+
+    .gauge-wrap {
+      position: relative;
+      width: min(315px, 100%);
+    }
+
+    .gauge-wrap img { width: 100%; display: block; }
+
+    .gauge-center {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding-top: 40px;
+      pointer-events: none;
+      text-align: center;
+    }
+
+    .gauge-center strong {
+      display: block;
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .risk-distribution {
+      margin-top: 20px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .risk-distribution-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .risk-distribution-value {
+      color: var(--red);
+      font-weight: 800;
+    }
+
+    .risk-bar {
+      display: flex;
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #e2e8f0;
+    }
+
+    .risk-bar span { display: block; min-width: 2px; }
+
+    .legend-grid {
+      width: min(300px, 100%);
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 42px;
+      margin-top: 18px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .legend-name {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .low { background: var(--green); }
+    .medium { background: var(--yellow); }
+    .moderate { background: var(--yellow); }
+    .high { background: var(--orange); }
+    .severe { background: var(--red); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      padding: 13px 16px;
+      background: #f0f6fe;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .sort-header {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      padding: 0;
+      text-align: inherit;
+      font: inherit;
+      font-weight: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .sort-icon {
+      position: relative;
+      width: 10px;
+      height: 14px;
+      display: inline-block;
+      flex: none;
+    }
+
+    .sort-icon:before,
+    .sort-icon:after {
+      content: "";
+      position: absolute;
+      left: 1px;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+    }
+
+    .sort-icon:before {
+      top: 1px;
+      border-bottom: 5px solid #a7afbd;
+    }
+
+    .sort-icon:after {
+      bottom: 1px;
+      border-top: 5px solid #a7afbd;
+    }
+
+    .sort-header.asc .sort-icon:before { border-bottom-color: var(--blue); }
+    .sort-header.asc .sort-icon:after { opacity: .25; }
+    .sort-header.desc .sort-icon:before { opacity: .25; }
+    .sort-header.desc .sort-icon:after { border-top-color: var(--blue); }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid #f3f4f7;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    th.num, td.num { text-align: right; }
+    th.center, td.center { text-align: center; }
+    td.hash, td.address {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      color: rgba(15, 23, 42, .72);
+    }
+
+    tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: rgba(243, 244, 246, .55); }
+
+    .table-wrap { overflow-x: auto; }
+
+    .risk-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-height: 20px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    .risk-badge.low { color: #166534; background: #dcfce7; }
+    .risk-badge.medium { color: #92400e; background: #fef3c7; }
+    .risk-badge.moderate { color: #92400e; background: #fef3c7; }
+    .risk-badge.high { color: #9a3412; background: #ffedd5; }
+    .risk-badge.severe { color: #991b1b; background: #fee2e2; }
+    .risk-badge.unknown { color: #475569; background: #e2e8f0; }
+
+    .link-btn {
+      border: 0;
+      background: transparent;
+      color: var(--blue);
+      padding: 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .icon-link {
+      width: 22px;
+      height: 22px;
+      display: inline-grid;
+      place-items: center;
+      margin-left: 6px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--blue);
+      vertical-align: middle;
+      text-decoration: none;
+    }
+
+    .icon-link svg {
+      width: 13px;
+      height: 13px;
+      stroke-width: 2.2;
+    }
+
+    .detail-card {
+      min-height: 120px;
+      border: 1px solid #f3f4f7;
+      border-radius: 8px;
+      padding: 16px;
+      background: #fff;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .stat-card {
+      min-height: 76px;
+      padding: 14px;
+      border: 1px solid #f3f4f7;
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .stat-card.wide { grid-column: span 2; }
+
+    .tabs {
+      display: flex;
+      gap: 38px;
+      border-bottom: 1px solid #edf0f4;
+      margin: 28px 0;
+    }
+
+    .tab {
+      position: relative;
+      border: 0;
+      background: transparent;
+      padding: 0 0 13px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .tab.active { color: var(--blue); }
+    .tab.active:after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 2px;
+      background: var(--blue);
+    }
+
+    .tab-panel { display: none; gap: 22px; }
+    .tab-panel.active { display: grid; }
+
+    .chart-toggle {
+      display: inline-flex;
+      gap: 3px;
+      padding: 4px;
+      border-radius: 6px;
+      background: var(--bg);
+    }
+
+    .chart-toggle button {
+      height: 28px;
+      border: 0;
+      border-radius: 5px;
+      background: transparent;
+      color: #6b7280;
+      padding: 0 12px;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .chart-toggle button.active {
+      background: #fff;
+      color: var(--text);
+      box-shadow: 0 1px 2px rgba(0,0,0,.08);
+    }
+
+    .chart-area {
+      min-height: 300px;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+    }
+
+    .chart-area img {
+      max-width: 100%;
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .price-chart-shell {
+      width: 100%;
+      display: grid;
+      gap: 16px;
+    }
+
+    .price-chart-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .price-chart-metric {
+      min-height: 72px;
+      padding: 12px 14px;
+      border: 1px solid #eef2f7;
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    .price-chart-metric-label {
+      margin: 0 0 6px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .price-chart-metric-value {
+      margin: 0;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .price-chart-metric-sub {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .price-chart-card {
+      width: 100%;
+      padding: 14px 16px 10px;
+      border: 1px solid #eef2f7;
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+
+    .price-chart-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .price-chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .price-chart-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .price-chart-legend-line {
+      width: 20px;
+      height: 0;
+      border-top: 2px solid #94a3b8;
+    }
+
+    .price-chart-legend-line.dashed {
+      border-top-style: dashed;
+    }
+
+    .price-chart-legend-band {
+      width: 20px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, .14);
+      border: 1px solid rgba(34, 197, 94, .22);
+    }
+
+    .price-chart-legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--blue);
+    }
+
+    .risk-chart-shell {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .risk-toolbar,
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px 20px;
+      border-bottom: 1px solid #f3f4f7;
+      background: #fff;
+    }
+
+    .segmented {
+      display: inline-flex;
+      overflow: hidden;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: #fff;
+      font-size: 12px;
+    }
+
+    .segmented button {
+      height: 30px;
+      border: 0;
+      border-right: 1px solid #d1d5db;
+      background: #fff;
+      color: #4b5563;
+      padding: 0 12px;
+    }
+
+    .segmented button:last-child { border-right: 0; }
+    .segmented button.active {
+      background: #e8edf2;
+      color: #4a6987;
+      font-weight: 800;
+    }
+
+    .risk-row,
+    .route-row,
+    .alert-row { cursor: pointer; }
+
+    .risk-row:hover {
+      background: #eff6ff;
+    }
+
+    .risk-row.active,
+    .route-row.active,
+    .alert-row.active {
+      background: #edf5ff;
+    }
+
+    .drilldown-hint {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 16px;
+      border-top: 1px solid #eef2f7;
+      border-bottom: 1px solid #eef2f7;
+      background: #f8fafc;
+      color: #64748b;
+      font-size: 12px;
+    }
+
+    .drilldown-hint.show {
+      display: flex;
+    }
+
+    .drilldown-path {
+      color: #475569;
+      font-weight: 600;
+    }
+
+    .drilldown-path strong {
+      color: #0f172a;
+    }
+
+    .drilldown-help {
+      color: #64748b;
+    }
+
+    .drilldown-cell {
+      position: relative;
+      color: #0f172a;
+      font-weight: 600;
+      padding-right: 32px;
+    }
+
+    .drilldown-chevron {
+      display: inline-flex;
+      margin-right: 8px;
+      color: #2563eb;
+      font-weight: 900;
+    }
+
+    .drilldown-arrow {
+      position: absolute;
+      right: 14px;
+      color: #2563eb;
+      opacity: 0;
+      transition: opacity .15s ease, transform .15s ease;
+    }
+
+    .risk-row:hover .drilldown-cell {
+      color: #2563eb;
+    }
+
+    .risk-row:hover .drilldown-arrow {
+      opacity: 1;
+      transform: translateX(2px);
+    }
+
+    .route-row:hover {
+      background: #eff6ff;
+    }
+
+    .route-row:hover .bridge-protocol-name,
+    .route-row:hover .expander {
+      color: var(--blue);
+    }
+
+    .route-row.active {
+      background: #edf5ff;
+    }
+
+    .route-row .expander {
+      width: 18px;
+      display: inline-block;
+      color: var(--muted);
+      font-size: 11px;
+      transition: transform .15s ease, color .15s ease;
+    }
+
+    .route-row.expanded .expander {
+      transform: rotate(90deg);
+      color: var(--blue);
+    }
+
+    .bridge-protocol-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .bridge-protocol-main {
+      display: inline-grid;
+      gap: 2px;
+      vertical-align: middle;
+    }
+
+    .bridge-protocol-name {
+      font-weight: 750;
+      color: var(--text);
+    }
+
+    .bridge-protocol-sub {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .protocol-risk-head {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .info-dot {
+      position: relative;
+      width: 16px;
+      height: 16px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1;
+      text-transform: none;
+    }
+
+    .info-dot:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 8px);
+      z-index: 30;
+      width: 280px;
+      padding: 9px 10px;
+      border-radius: 7px;
+      background: rgba(15, 23, 42, .96);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.45;
+      letter-spacing: 0;
+      text-transform: none;
+      box-shadow: var(--shadow-lg);
+      white-space: normal;
+      text-align: left;
+    }
+
+    .bridge-detail-row td {
+      padding: 0;
+      background: #fbfdff;
+    }
+
+    .bridge-detail {
+      margin: 0;
+      padding: 14px 18px 16px 42px;
+      border-top: 1px solid #dbeafe;
+      background: linear-gradient(90deg, #eff6ff 0, #eff6ff 4px, #fbfdff 4px, #fbfdff 100%);
+    }
+
+    .bridge-nested-table {
+      border: 1px solid #e8eef6;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .bridge-nested-table table th {
+      padding: 10px 14px;
+      background: #f8fafc;
+      font-size: 10px;
+    }
+
+    .bridge-nested-table table td {
+      padding: 12px 14px;
+      background: #fff;
+    }
+
+    .bridge-flow-row:hover td {
+      background: #f8fbff;
+    }
+
+    .category-with-risk {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 650;
+    }
+
+    .risk-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      padding: 18px 20px 0;
+    }
+
+    .risk-summary-card {
+      border: 1px solid #eef1f5;
+      border-radius: 8px;
+      background: #fff;
+      padding: 12px;
+      cursor: pointer;
+    }
+
+    .risk-summary-card:hover,
+    .risk-summary-card.active {
+      border-color: #bfd8ff;
+      background: #f8fbff;
+    }
+
+    .risk-summary-card strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 18px;
+    }
+
+    .risk-chart {
+      padding: 18px 22px 20px;
+    }
+
+    .risk-chart-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .risk-plot {
+      display: grid;
+      grid-template-columns: 54px minmax(0, 1fr);
+      gap: 12px;
+      min-height: 250px;
+    }
+
+    .y-axis {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 4px 0 26px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .plot-body {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(44px, 1fr));
+      align-items: end;
+      gap: 12px;
+      padding: 8px 4px 0;
+      border-left: 1px solid #e5e7eb;
+      border-bottom: 1px solid #e5e7eb;
+      background: linear-gradient(to top, rgba(15,23,42,.06) 1px, transparent 1px) 0 0 / 100% 25%;
+    }
+
+    .time-bucket {
+      display: grid;
+      grid-template-rows: 180px 24px;
+      gap: 8px;
+      align-items: end;
+      justify-items: center;
+    }
+
+    .bar-stack {
+      width: 100%;
+      max-width: 44px;
+      align-self: end;
+      display: flex;
+      flex-direction: column-reverse;
+      overflow: hidden;
+      border-radius: 6px 6px 0 0;
+      border: 1px solid rgba(15,23,42,.08);
+      background: #edf1f5;
+      cursor: pointer;
+    }
+
+    .bar-stack span {
+      width: 100%;
+      min-height: 4px;
+      display: block;
+    }
+
+    .x-label {
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .axis-title {
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) repeat(4, minmax(130px, auto));
+      gap: 14px;
+      align-items: end;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .search {
+      width: 100%;
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #f9fafb;
+      padding: 0 12px;
+      outline: 0;
+    }
+
+    .search:focus,
+    .control:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(81, 152, 251, .15);
+    }
+
+    .empty-row { display: none; }
+    .empty-row.visible { display: table-row; }
+    .empty-row td {
+      color: var(--muted);
+      text-align: center;
+      padding: 48px 16px;
+      font-size: 13px;
+      background: #fafafa;
+    }
+
+    .empty-row td:before {
+      content: "";
+      display: block;
+      width: 22px;
+      height: 22px;
+      margin: 0 auto 8px;
+      border: 2px solid #cbd5e1;
+      border-radius: 50%;
+      box-shadow: 8px 8px 0 -6px #cbd5e1;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      min-height: 24px;
+      align-items: center;
+      padding: 2px 9px;
+      border-radius: 999px;
+      background: var(--bg);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status-pill.done {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 20px;
+      transform: translateX(-50%);
+      z-index: 90;
+      display: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: #111827;
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .16);
+    }
+
+    .toast.show { display: block; }
+
+    /* Interaction polish inspired by the advanced prototype reference. */
+    :root {
+      --bg: #f8fafc;
+      --soft: #f1f5f9;
+      --blue-light: #eff6ff;
+      --shadow: 0 4px 6px -1px rgba(15, 23, 42, .05), 0 2px 4px -2px rgba(15, 23, 42, .05);
+      --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, .12), 0 8px 10px -6px rgba(15, 23, 42, .1);
+      --radius-sm: 6px;
+    }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    .app-header {
+      background: rgba(255, 255, 255, .82);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .brand-icon {
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--blue), #3b82f6);
+      font-size: 13px;
+    }
+
+    .brand-name {
+      font-size: 18px;
+      background: linear-gradient(to right, var(--blue), #1d4ed8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .control,
+    .btn {
+      border-radius: var(--radius-sm);
+      transition: border-color .15s ease, background .15s ease, box-shadow .15s ease, transform .15s ease;
+      outline: 0;
+    }
+
+    select.control {
+      appearance: none;
+      padding-right: 28px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 14px;
+    }
+
+    .control:hover,
+    .btn:hover {
+      border-color: #cbd5e1;
+      background: var(--soft);
+    }
+
+    .control:focus,
+    .search:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .15);
+    }
+
+    .dropdown-menu {
+      display: grid;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-8px);
+      box-shadow: var(--shadow-lg);
+      transition: opacity .2s cubic-bezier(.16, 1, .3, 1), transform .2s cubic-bezier(.16, 1, .3, 1), visibility .2s;
+    }
+
+    .dropdown.open .dropdown-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .tab,
+    .tab-panel,
+    .page {
+      transition: color .15s ease, opacity .2s ease, transform .2s ease;
+    }
+
+    .tab:hover { color: var(--text); }
+    .tab.active:after { border-radius: 2px; }
+    .tab-panel.active,
+    .page.active {
+      animation: fadeIn .22s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stat-grid {
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    .stat-card,
+    .panel {
+      transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+    }
+
+    .stat-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+
+    th {
+      background: var(--soft);
+      font-size: 11px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    tbody tr {
+      transition: background .12s ease;
+    }
+
+    tbody tr:hover {
+      background: rgba(241, 245, 249, .7);
+    }
+
+    .sort-icon {
+      opacity: .42;
+      transition: opacity .15s ease;
+    }
+
+    .sort-header:hover .sort-icon,
+    .sort-header.asc .sort-icon,
+    .sort-header.desc .sort-icon {
+      opacity: 1;
+    }
+
+    .risk-summary-card {
+      transition: border-color .15s ease, background .15s ease, box-shadow .15s ease, transform .15s ease;
+    }
+
+    .risk-summary-card:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
+    }
+
+    .risk-summary-card.active {
+      border-color: var(--blue);
+      background: var(--blue-light);
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, .18);
+      position: relative;
+    }
+
+    .risk-summary-card.active::after {
+      content: "x";
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+      opacity: .62;
+      transition: opacity .15s ease, transform .15s ease;
+    }
+
+    .risk-summary-card.active:hover::after {
+      opacity: 1;
+      transform: scale(1.08);
+    }
+
+    .risk-reset-btn {
+      display: none;
+      color: var(--red);
+      border-color: rgba(239, 68, 68, .24);
+      background: #fef2f2;
+    }
+
+    .risk-reset-btn.show {
+      display: inline-flex;
+    }
+
+    .risk-reset-btn:hover {
+      color: #991b1b;
+      border-color: rgba(239, 68, 68, .38);
+      background: #fee2e2;
+    }
+
+    .bar-stack {
+      transition: transform .2s cubic-bezier(.16, 1, .3, 1), box-shadow .2s ease, opacity .2s ease, filter .2s ease;
+    }
+
+    .risk-plot:hover .bar-stack:not(:hover) {
+      opacity: .35;
+      filter: grayscale(20%);
+    }
+
+    .bar-stack:hover {
+      transform: translateY(-4px) scaleX(1.02);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, .1), 0 4px 6px -4px rgba(0, 0, 0, .1);
+    }
+
+    .bar-stack span {
+      position: relative;
+      cursor: pointer;
+      transition: opacity .1s ease, filter .15s ease;
+    }
+
+    .bar-stack span:hover {
+      z-index: 10;
+      outline: 2px solid #fff;
+      filter: brightness(1.05);
+    }
+
+    .plot-tooltip {
+      position: fixed;
+      z-index: 100;
+      display: none;
+      max-width: 260px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 7px;
+      background: rgba(15, 23, 42, .96);
+      color: #fff;
+      font-size: 12px;
+      line-height: 1.45;
+      pointer-events: none;
+      box-shadow: var(--shadow-lg);
+      transform: translate(-50%, calc(-100% - 12px));
+    }
+
+    .plot-tooltip.show { display: block; }
+
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-50%) translateY(12px);
+      transition: opacity .2s ease, transform .2s cubic-bezier(.16, 1, .3, 1);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .toast.show {
+      display: flex;
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 1060px) {
+      .token-grid,
+      .stat-grid,
+      .price-chart-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .risk-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stat-card.wide { grid-column: span 2; }
+      .filters { grid-template-columns: 1fr 1fr; }
+      .app-header { height: auto; flex-wrap: wrap; padding: 14px 18px; }
+    }
+
+    @media (max-width: 720px) {
+      main { width: calc(100% - 24px); padding-top: 18px; }
+      .token-grid,
+      .risk-summary-grid,
+      .metric-grid,
+      .stat-grid,
+      .price-chart-metrics,
+      .filters { grid-template-columns: 1fr; }
+      .stat-card.wide { grid-column: auto; }
+      .section-head,
+      .token-top,
+      .token-header,
+      .drilldown-hint,
+      .risk-toolbar,
+      .filter-bar { align-items: flex-start; flex-direction: column; }
+      .tabs { gap: 22px; overflow-x: auto; }
+      table { min-width: 880px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-icon">CT</div>
+      <div class="brand-name">CT Radar</div>
+    </div>
+
+    <div class="header-actions">
+      <label class="header-control">Token
+        <select class="control" id="token-switcher">
+          <option>PYUSD</option>
+          <option>USD1</option>
+        </select>
+      </label>
+      <div class="data-as-of" id="data-as-of">Data as of: 2026-05-26 08:00 UTC</div>
+      <div class="avatar">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='32' fill='%23dbeafe'/%3E%3Ccircle cx='32' cy='25' r='12' fill='%232563eb'/%3E%3Cpath d='M14 58c3-13 13-20 18-20s15 7 18 20' fill='%232563eb'/%3E%3C/svg%3E" alt="User">
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="page active" id="token">
+      <section class="panel">
+        <div class="panel-pad">
+          <div class="token-header">
+            <div class="token-id">
+              <div class="token-logo"><img id="token-detail-logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='32' fill='%23dbeafe'/%3E%3Ctext x='32' y='39' text-anchor='middle' font-family='Arial' font-size='20' font-weight='700' fill='%232563eb'%3EPY%3C/text%3E%3C/svg%3E" alt="PYUSD"></div>
+              <div>
+                <div class="token-title"><h1 id="token-detail-name">PayPal USD</h1><span class="tag" id="token-detail-symbol">PYUSD</span></div>
+                <div class="small muted" id="token-detail-issuer">Issuer: Paxos, PayPal brand</div>
+                <div class="small mono" id="token-detail-address" style="margin-top:8px"></div>
+              </div>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:10px">
+              <select class="control" id="chain-select" aria-label="Chain"></select>
+              <select class="control" id="range-select" aria-label="Time Range">
+                <option>Last 24 Hours</option>
+                <option>Last 7 Days</option>
+                <option>Last 30 Days</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="tabs" role="tablist">
+            <button class="tab active" type="button" data-token-tab="market">Market</button>
+            <button class="tab" type="button" data-token-tab="risk">Balance Distribution</button>
+            <button class="tab" type="button" data-token-tab="bridge">Bridge Activity</button>
+            <button class="tab" type="button" data-token-tab="alerts">Alerts</button>
+          </div>
+
+          <div class="tab-panel active" id="tab-market">
+            <div class="stat-grid">
+              <div class="stat-card"><p class="metric-label">Current Price</p><p class="metric-value" data-market-field="price"></p></div>
+              <div class="stat-card"><p class="metric-label">Price Change</p><p class="metric-value" data-market-field="priceChange"></p></div>
+              <div class="stat-card"><p class="metric-label">Market Cap</p><p class="metric-value" data-market-field="marketCap"></p></div>
+              <div class="stat-card"><p class="metric-label">Volume</p><p class="metric-value" data-market-field="volume"></p></div>
+              <div class="stat-card"><p class="metric-label">Vol / Mkt Cap</p><p class="metric-value" data-market-field="volMktCap"></p></div>
+              <div class="stat-card"><p class="metric-label">FDV</p><p class="metric-value" data-market-field="fdv"></p></div>
+              <div class="stat-card"><p class="metric-label">Total Supply</p><p class="metric-value" data-market-field="totalSupply"></p></div>
+              <div class="stat-card"><p class="metric-label">Circulating Supply</p><p class="metric-value" data-market-field="circulatingSupply"></p></div>
+              <div class="stat-card wide"><p class="metric-label">Holders</p><p class="metric-value" data-market-field="holders"></p></div>
+            </div>
+
+            <section class="panel" style="box-shadow:none">
+              <div class="panel-pad">
+                <div class="section-head">
+                  <div>
+                    <h2>Price</h2>
+                    <div class="small muted">De-peg monitoring is displayed on the price chart and is not included in rule-triggered Alerts.</div>
+                  </div>
+                  <span class="risk-badge low" id="depeg-status">Normal</span>
+                </div>
+                <div class="chart-area" id="price-chart" aria-label="Price chart"></div>
+              </div>
+            </section>
+
+            <section class="panel" style="box-shadow:none">
+              <div class="panel-pad section-head" style="margin:0"><h2>Top Holders</h2></div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>#</th><th>Wallet Address</th><th>Entity</th><th>Entity Category</th><th>Amount</th><th>Value USD</th><th>Percentage</th></tr></thead>
+                  <tbody id="market-holder-body"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="panel" style="box-shadow:none">
+              <div class="panel-pad section-head" style="margin:0"><h2>Top 10 Transactions</h2></div>
+              <div class="table-wrap">
+                <table id="market-transaction-table">
+                  <thead><tr><th>Tx Hash</th><th>Amount</th><th>Value USD</th><th>Sender</th><th>Receiver</th><th>Triggered Rules</th><th>Risk Level</th><th>Time (UTC)</th></tr></thead>
+                  <tbody id="market-transaction-body"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          <div class="tab-panel" id="tab-risk">
+            <section class="risk-chart-shell">
+              <div class="risk-toolbar">
+                <div>
+                  <h2>Current Balance by Entity Risk Group</h2>
+                  <div class="small muted">Balances are aggregated by Entity Risk Group based on the selected Token + Chain. Percentages are calculated against the circulating supply of the selected Token + Chain. Cross-chain balances are not merged by default to avoid double counting caused by mint/burn, lock/mint, or bridge mapping mechanisms.</div>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+                  <button class="btn ghost risk-reset-btn" id="global-risk-reset" type="button" data-clear-risk>Clear Filter</button>
+                  <div class="dropdown" id="entity-category-dropdown">
+                    <button class="control" id="entity-category-button" type="button" data-dropdown-toggle="entity-category-dropdown" aria-expanded="false">Entity Category: All</button>
+                    <div class="dropdown-menu wide" id="category-options" role="menu" aria-label="Entity Category filter"></div>
+                  </div>
+                  <select class="control" id="metric-select" aria-label="Metric">
+                    <option>Balance</option>
+                    <option>Sent</option>
+                    <option>Received</option>
+                    <option>Transfers</option>
+                  </select>
+                  <select class="control" id="unit-select" aria-label="Unit">
+                    <option>Token Amount</option>
+                    <option>Value USD</option>
+                    <option>Percentage</option>
+                  </select>
+                </div>
+              </div>
+              <div class="risk-summary-grid" id="risk-summary"></div>
+              <div class="risk-chart" aria-label="Balance distribution chart">
+                <div class="risk-chart-meta">
+                  <span class="axis-title" id="risk-y-axis">Y-axis: Value USD</span>
+                  <span class="axis-title">X-axis: Time</span>
+                </div>
+                <div class="risk-plot">
+                  <div class="y-axis" id="risk-y-ticks"></div>
+                  <div class="plot-body" id="risk-plot"></div>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <div class="drilldown-hint" id="risk-drilldown-hint" aria-live="polite">
+                  <div class="drilldown-path" id="risk-drilldown-path"></div>
+                  <div class="drilldown-help" id="risk-drilldown-help"></div>
+                </div>
+                <table id="risk-table">
+                  <thead><tr id="risk-table-head"></tr></thead>
+                  <tbody id="risk-table-body"></tbody>
+                </table>
+              </div>
+            </section>
+
+          </div>
+
+          <div class="tab-panel" id="tab-bridge">
+            <section class="panel" style="box-shadow:none">
+              <div class="filter-bar">
+                <div><h2>Bridge Activity</h2><div class="small muted">Scoped to the selected Token + Chain only.</div></div>
+                <div style="display:flex;flex-wrap:wrap;gap:10px">
+                  <select class="control" id="protocol-select" aria-label="Protocol"></select>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table data-no-sort>
+                  <thead><tr><th>Protocol</th><th>Source Chain</th><th>Destination Chain</th><th class="num">Transfer Count</th><th class="num">Volume</th><th class="center"><span class="protocol-risk-head">Protocol Risk <span class="info-dot" data-tooltip="Protocol Risk is determined by the highest-risk entity category involved in this protocol route.">i</span></span></th></tr></thead>
+                  <tbody id="bridge-body"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          <div class="tab-panel" id="tab-alerts">
+            <section class="panel" style="box-shadow:none">
+              <div class="filter-bar">
+                <div class="filters">
+                  <div class="field">
+                    <label>Risk Level</label>
+                    <select class="control" id="alert-risk-level">
+                      <option value="all">All</option>
+                      <option value="severe">Severe</option>
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>Rule Name</label>
+                    <select class="control" id="alert-rule"></select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Tx Hash</th><th>Amount</th><th>Value USD</th><th>Sender</th><th>Receiver</th><th>Triggered Rules</th><th>Risk Level</th><th>Time (UTC)</th></tr></thead>
+                  <tbody id="alert-body"></tbody>
+                </table>
+              </div>
+              <div class="panel-pad" style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #f3f4f7">
+                <div style="display:flex;gap:6px">
+                  <button class="btn ghost" type="button" disabled>Prev</button>
+                  <button class="btn primary" type="button">1</button>
+                  <button class="btn ghost" type="button" data-toast="Next page preview">Next</button>
+                </div>
+              </div>
+            </section>
+
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div class="toast" id="toast">Updated</div>
+  <div class="plot-tooltip" id="plot-tooltip"></div>
+
+  <script>
+    const toast = document.getElementById("toast");
+    const riskLevels = ["low", "medium", "high", "severe"];
+    const riskNames = { low: "Low-risk Entities", medium: "Medium-risk Entities", high: "High-risk Entities", severe: "Severe-risk Entities" };
+    const riskColors = { low: "#22c55e", medium: "#f59e0b", high: "#f97316", severe: "#dc2626" };
+    const riskRank = { "severe-risk entities": 4, "high-risk entities": 3, "medium-risk entities": 2, "low-risk entities": 1 };
+    const dates = ["May 20", "May 21", "May 22", "May 23", "May 24", "May 25", "May 26"];
+    const state = { token: "PYUSD", chain: "Ethereum", range: "Last 24 Hours", metric: "Balance", unit: "Value USD", flow: "all", protocol: "all" };
+    let riskState = { level: "risk", risk: null, category: null };
+
+    const tokenDetails = {
+      PYUSD: {
+        name: "PayPal USD",
+        symbol: "PYUSD",
+        issuer: "Paxos, PayPal brand",
+        logo: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='32' fill='%23dbeafe'/%3E%3Ctext x='32' y='39' text-anchor='middle' font-family='Arial' font-size='20' font-weight='700' fill='%232563eb'%3EPY%3C/text%3E%3C/svg%3E",
+        chains: {
+          Ethereum: { addressShort: "0x6c3ea90...0e8", addressFull: "0x6c3ea9036406852006290770bedfcaba0e23a0e8", explorerUrl: "https://etherscan.io/token/0x6c3ea9036406852006290770bedfcaba0e23a0e8", price: "$0.9972", priceChange: "-0.28%", marketCap: "$812.4M", volume: "$146.8M", volMktCap: "18.1%", fdv: "$814.7M", totalSupply: "814.7M PYUSD", circulatingSupply: "812.4M PYUSD", holders: "143.2K", depeg: { status: "Normal", deviation: "-0.28%", price: "0.9972 USD" } },
+          Solana: { addressShort: "2b1kV6...PXt7", addressFull: "2b1kV6D5rYgJvP2mP4QPK2qeaFPXt7", explorerUrl: "https://solscan.io/token/2b1kV6D5rYgJvP2mP4QPK2qeaFPXt7", price: "$1.0011", priceChange: "+0.11%", marketCap: "$327.9M", volume: "$61.2M", volMktCap: "18.7%", fdv: "$328.5M", totalSupply: "328.5M PYUSD", circulatingSupply: "327.9M PYUSD", holders: "89.4K", depeg: { status: "Normal", deviation: "+0.11%", price: "1.0011 USD" } }
+        }
+      },
+      USD1: {
+        name: "World Liberty Financial USD",
+        symbol: "USD1",
+        issuer: "World Liberty Financial",
+        logo: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='32' fill='%23f3e8ff'/%3E%3Ctext x='32' y='39' text-anchor='middle' font-family='Arial' font-size='20' font-weight='700' fill='%237c3aed'%3EU1%3C/text%3E%3C/svg%3E",
+        chains: {
+          Ethereum: { addressShort: "0x1111...d001", addressFull: "0x1111551155aD0010000000000000000000000001", explorerUrl: "https://etherscan.io/token/0x1111551155aD0010000000000000000000000001", price: "$1.0062", priceChange: "+0.62%", marketCap: "$1.24B", volume: "$214.7M", volMktCap: "17.3%", fdv: "$1.25B", totalSupply: "1.25B USD1", circulatingSupply: "1.24B USD1", holders: "98.1K", depeg: { status: "Warning", deviation: "+0.62%", price: "1.0062 USD" } },
+          "BNB Chain": { addressShort: "0x1111...b001", addressFull: "0x1111551155aB0010000000000000000000000001", explorerUrl: "https://bscscan.com/token/0x1111551155aB0010000000000000000000000001", price: "$1.0007", priceChange: "+0.07%", marketCap: "$2.08B", volume: "$338.5M", volMktCap: "16.3%", fdv: "$2.09B", totalSupply: "2.09B USD1", circulatingSupply: "2.08B USD1", holders: "212.6K", depeg: { status: "Normal", deviation: "+0.07%", price: "1.0007 USD" } },
+          TRON: { addressShort: "TUSD1...9kPq", addressFull: "TUSD1R7fjaYQFvT94U7uoNN7H9kPq", explorerUrl: "https://tronscan.org/#/token20/TUSD1R7fjaYQFvT94U7uoNN7H9kPq", price: "$0.9688", priceChange: "-3.12%", marketCap: "$644.3M", volume: "$91.1M", volMktCap: "14.1%", fdv: "$665.1M", totalSupply: "665.1M USD1", circulatingSupply: "644.3M USD1", holders: "76.8K", depeg: { status: "Critical", deviation: "-3.12%", price: "0.9688 USD" } }
+        }
+      }
+    };
+
+    const riskRows = [
+      { token: "PYUSD", chain: "Ethereum", risk: "low", category: "Regulated Exchange", entity: "Coinbase Hot Wallet", amount: 186.2, value: 185.7, transfers: 98210, sent: 1120, received: 1106 },
+      { token: "PYUSD", chain: "Ethereum", risk: "low", category: "Custodian", entity: "Anchorage Custody", amount: 78.4, value: 78.1, transfers: 18320, sent: 214, received: 236 },
+      { token: "PYUSD", chain: "Ethereum", risk: "medium", category: "High-risk Exchange", entity: "Exchange Beta", amount: 12.8, value: 12.76, transfers: 39102, sent: 440.1, received: 421.8 },
+      { token: "PYUSD", chain: "Ethereum", risk: "high", category: "Scam", entity: "Phishing kit cluster", amount: 7.3, value: 7.28, transfers: 65969, sent: 235, received: 234 },
+      { token: "PYUSD", chain: "Ethereum", risk: "severe", category: "Sanctioned Entity", entity: "OFAC Cluster 18", amount: 32.05, value: 31.96, transfers: 86494, sent: 464, received: 466 },
+      { token: "PYUSD", chain: "Ethereum", risk: "severe", category: "Mixer", entity: "Mixer Deposit Cluster", amount: 8.51, value: 8.49, transfers: 76288, sent: 261, received: 255 },
+      { token: "PYUSD", chain: "Solana", risk: "low", category: "Payment Processor", entity: "PayPal Settlement", amount: 91.2, value: 91.3, transfers: 67218, sent: 540, received: 551 },
+      { token: "PYUSD", chain: "Solana", risk: "high", category: "Stolen Funds", entity: "Exploit Cluster S-14", amount: 4.4, value: 4.41, transfers: 9388, sent: 84, received: 79 },
+      { token: "USD1", chain: "Ethereum", risk: "low", category: "Regulated Exchange", entity: "Kraken Treasury", amount: 210.5, value: 211.8, transfers: 54211, sent: 618, received: 631 },
+      { token: "USD1", chain: "Ethereum", risk: "medium", category: "Gambling", entity: "Gaming Pool 7", amount: 26.4, value: 26.56, transfers: 19877, sent: 144, received: 151 },
+      { token: "USD1", chain: "BNB Chain", risk: "low", category: "Custodian", entity: "Ceffu Custody", amount: 336.1, value: 336.3, transfers: 88914, sent: 740, received: 761 },
+      { token: "USD1", chain: "BNB Chain", risk: "severe", category: "Terrorist Financing", entity: "TF Cluster 06", amount: 1.55, value: 1.55, transfers: 4573, sent: 25.9, received: 26.0 },
+      { token: "USD1", chain: "TRON", risk: "high", category: "Darknet Market", entity: "Market Relay", amount: 14.6, value: 14.15, transfers: 11220, sent: 91, received: 87 },
+      { token: "USD1", chain: "TRON", risk: "severe", category: "Mixer", entity: "TRON Mixer Cluster", amount: 5.8, value: 5.62, transfers: 7810, sent: 48, received: 50 }
+    ];
+
+    const holders = [
+      { token: "PYUSD", chain: "Ethereum", address: "0xf977...41acec", entity: "Coinbase Custody", category: "Custodian", risk: "low", amount: "186.20M PYUSD", value: "$185.70M", pct: "22.86%" },
+      { token: "PYUSD", chain: "Ethereum", address: "0x6c3e...0e8", entity: "Issuer Treasury", category: "Payment Processor", risk: "low", amount: "78.40M PYUSD", value: "$78.10M", pct: "9.61%" },
+      { token: "PYUSD", chain: "Ethereum", address: "0x7a19...ba21", entity: "OFAC Cluster 18", category: "Sanctioned Entity", risk: "severe", amount: "32.05M PYUSD", value: "$31.96M", pct: "3.93%" },
+      { token: "PYUSD", chain: "Solana", address: "9xQe...2aP1", entity: "PayPal Settlement", category: "Payment Processor", risk: "low", amount: "91.20M PYUSD", value: "$91.30M", pct: "27.84%" },
+      { token: "USD1", chain: "Ethereum", address: "0x8332...1cdf", entity: "Kraken Treasury", category: "Regulated Exchange", risk: "low", amount: "210.50M USD1", value: "$211.80M", pct: "17.08%" },
+      { token: "USD1", chain: "BNB Chain", address: "0xbf19...782a", entity: "Ceffu Custody", category: "Custodian", risk: "low", amount: "336.10M USD1", value: "$336.30M", pct: "16.17%" },
+      { token: "USD1", chain: "TRON", address: "TX9s...a21Q", entity: "Market Relay", category: "Darknet Market", risk: "high", amount: "14.60M USD1", value: "$14.15M", pct: "2.20%" }
+    ];
+
+    const bridgeRows = [
+      { token: "PYUSD", currentChain: "Ethereum", direction: "Outflow", source: "Ethereum", destination: "Solana", protocol: "Wormhole", fromCat: "Regulated Exchange", toCat: "Bridge", volume: 12.4, count: 184, risk: "high", rules: "High-risk bridge exposure" },
+      { token: "PYUSD", currentChain: "Ethereum", direction: "Inflow", source: "Solana", destination: "Ethereum", protocol: "Wormhole", fromCat: "Bridge", toCat: "Regulated Exchange", volume: 9.1, count: 153, risk: "low", rules: "None" },
+      { token: "PYUSD", currentChain: "Solana", direction: "Inflow", source: "Ethereum", destination: "Solana", protocol: "Wormhole", fromCat: "Unknown", toCat: "Bridge", volume: 6.8, count: 92, risk: "unknown", rules: "Unknown source entity" },
+      { token: "USD1", currentChain: "Ethereum", direction: "Inflow", source: "BNB Chain", destination: "Ethereum", protocol: "LayerZero", fromCat: "Bridge", toCat: "Regulated Exchange", volume: 11.2, count: 301, risk: "medium", rules: "Bridge velocity" },
+      { token: "USD1", currentChain: "BNB Chain", direction: "Outflow", source: "BNB Chain", destination: "Ethereum", protocol: "LayerZero", fromCat: "High-risk Exchange", toCat: "Bridge", volume: 8.9, count: 244, risk: "high", rules: "High-risk exchange source" },
+      { token: "USD1", currentChain: "TRON", direction: "Outflow", source: "TRON", destination: "BNB Chain", protocol: "Stargate", fromCat: "Mixer", toCat: "Bridge", volume: 5.1, count: 92, risk: "severe", rules: "Mixer exposure" }
+    ];
+
+    const alerts = [
+      { timestamp: "2026-05-26 07:42 UTC", token: "PYUSD", chain: "Ethereum", risk: "severe", rule: "Entity Category Rule", summary: "$2.4M transfer to sanctioned entity", hash: "0x8f2a...3b9c", value: "$2.40M", from: "Unknown", to: "OFAC Cluster 18", status: "New" },
+      { timestamp: "2026-05-26 06:18 UTC", token: "PYUSD", chain: "Ethereum", risk: "high", rule: "Behavior Rule", summary: "Rapid in-out activity through mixer-adjacent cluster", hash: "0x99be...4f1e", value: "$840K", from: "Mixer Deposit Cluster", to: "Unknown", status: "Watching" },
+      { timestamp: "2026-05-25 22:10 UTC", token: "PYUSD", chain: "Solana", risk: "high", rule: "Large Transfer Rule", summary: "Large transfer from stolen-funds cluster", hash: "5GJ9...sL2p", value: "$420K", from: "Exploit Cluster S-14", to: "Unknown", status: "Acknowledged" },
+      { timestamp: "2026-05-26 05:07 UTC", token: "USD1", chain: "BNB Chain", risk: "high", rule: "Exposure Rule", summary: "$680K through high-risk exchange bridge flow", hash: "0x1c4d...9a21", value: "$680K", from: "Exchange Beta", to: "LayerZero Bridge", status: "New" },
+      { timestamp: "2026-05-26 03:25 UTC", token: "USD1", chain: "TRON", risk: "severe", rule: "Entity Category Rule", summary: "Mixer exposure above configured threshold", hash: "TXa9...3dQp", value: "$510K", from: "TRON Mixer Cluster", to: "Unknown", status: "Watching" }
+    ];
+
+    const transactions = [
+      { token: "PYUSD", timestamp: "2026-05-26 07:42 UTC", hash: "0x8f2a...3b9c", chain: "Ethereum", amount: "2,407,218 PYUSD", value: "$2.40M", sender: "Unknown", receiver: "OFAC Cluster 18", rules: "Entity Category Rule", risk: "severe", sortValue: 2400000 },
+      { token: "PYUSD", timestamp: "2026-05-26 06:18 UTC", hash: "0x99be...4f1e", chain: "Ethereum", amount: "842,090 PYUSD", value: "$840K", sender: "Mixer Deposit Cluster", receiver: "Unknown", rules: "Behavior Rule", risk: "high", sortValue: 840000 },
+      { token: "PYUSD", timestamp: "2026-05-25 22:10 UTC", hash: "5GJ9...sL2p", chain: "Solana", amount: "419,530 PYUSD", value: "$420K", sender: "Exploit Cluster S-14", receiver: "Unknown", rules: "Large Transfer Rule", risk: "high", sortValue: 420000 },
+      { token: "USD1", timestamp: "2026-05-26 05:07 UTC", hash: "0x1c4d...9a21", chain: "BNB Chain", amount: "679,820 USD1", value: "$680K", sender: "Exchange Beta", receiver: "LayerZero Bridge", rules: "Exposure Rule", risk: "high", sortValue: 680000 },
+      { token: "USD1", timestamp: "2026-05-26 03:25 UTC", hash: "TXa9...3dQp", chain: "TRON", amount: "526,300 USD1", value: "$510K", sender: "TRON Mixer Cluster", receiver: "Unknown", rules: "Entity Category Rule", risk: "severe", sortValue: 510000 }
+    ];
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(toast.timer);
+      toast.timer = window.setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+
+    function currentToken() {
+      return tokenDetails[state.token];
+    }
+
+    function currentChainData() {
+      return currentToken().chains[state.chain];
+    }
+
+    function formatMoney(value) {
+      if (value >= 1000) return `$${(value / 1000).toFixed(2)}B`;
+      return `$${value.toFixed(2)}M`;
+    }
+
+    function formatRiskBadge(risk) {
+      return `<span class="risk-badge ${risk}">${riskNames[risk]}</span>`;
+    }
+
+    function formatShortRiskBadge(risk) {
+      const label = risk === "medium" ? "medium" : risk;
+      return `<span class="risk-badge ${risk}">${label}</span>`;
+    }
+
+    function bridgeRiskRank(risk) {
+      return { low: 1, medium: 2, high: 3, severe: 4 }[risk] || 0;
+    }
+
+    function highestBridgeRisk(rows) {
+      return rows.reduce((highest, row) => bridgeRiskRank(row.risk) > bridgeRiskRank(highest) ? row.risk : highest, "unknown");
+    }
+
+    function formatCategoryRisk(category, risk) {
+      return `<span class="category-with-risk"><span>${category}</span>${formatShortRiskBadge(risk || "unknown")}</span>`;
+    }
+
+    function formatRiskValue(row, metric = state.metric, unit = state.unit) {
+      const token = state.token;
+      const valueMap = { Balance: row.value, Sent: row.sent, Received: row.received, Transfers: row.transfers };
+      const amountMap = { Balance: row.amount, Sent: row.sent, Received: row.received, Transfers: row.transfers };
+      const raw = unit === "Token Amount" ? amountMap[metric] : valueMap[metric];
+      if (unit === "Percentage") {
+        const denom = filteredRiskRows().reduce((sum, item) => sum + valueMap[metric], 0) || 1;
+        return `${((valueMap[metric] / denom) * 100).toFixed(2)}%`;
+      }
+      if (metric === "Transfers") return Number(raw).toLocaleString();
+      if (unit === "Token Amount") return `${Number(raw).toFixed(2)}M ${token}`;
+      return formatMoney(Number(raw));
+    }
+
+    function showTokenTab(tabId) {
+      document.querySelectorAll("[data-token-tab]").forEach((button) => button.classList.toggle("active", button.dataset.tokenTab === tabId));
+      document.querySelectorAll(".tab-panel").forEach((panel) => panel.classList.toggle("active", panel.id === "tab-" + tabId));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function selectedCategories() {
+      return Array.from(document.querySelectorAll("[data-category-filter]:checked")).map((input) => input.value);
+    }
+
+    function filteredRiskRows() {
+      const categories = selectedCategories();
+      return riskRows.filter((row) => row.token === state.token && row.chain === state.chain && (!categories.length || categories.includes(row.category)));
+    }
+
+    function groupRows(rows, key) {
+      const grouped = new Map();
+      rows.forEach((row) => {
+        const groupKey = row[key];
+        if (!grouped.has(groupKey)) grouped.set(groupKey, { ...row, [key]: groupKey, amount: 0, value: 0, transfers: 0, sent: 0, received: 0 });
+        const item = grouped.get(groupKey);
+        item.amount += row.amount;
+        item.value += row.value;
+        item.transfers += row.transfers;
+        item.sent += row.sent;
+        item.received += row.received;
+      });
+      return Array.from(grouped.values());
+    }
+
+    function riskTimeValue(base, index) {
+      const multipliers = state.range === "Last 24 Hours" ? [0.91, 0.94, 0.98, 1.02, 1.01, 1.04, 1] : [0.74, 0.82, 0.9, 0.86, 0.97, 1.08, 1];
+      return base * multipliers[index];
+    }
+
+    function updateChainOptions() {
+      const chainSelect = document.getElementById("chain-select");
+      const chains = Object.keys(currentToken().chains);
+      if (!chains.includes(state.chain)) state.chain = chains[0];
+      chainSelect.innerHTML = chains.map((chain) => `<option${chain === state.chain ? " selected" : ""}>${chain}</option>`).join("");
+    }
+
+    function renderTokenIdentity() {
+      const token = currentToken();
+      const chain = currentChainData();
+      document.getElementById("token-switcher").value = state.token;
+      document.getElementById("range-select").value = state.range;
+      document.getElementById("token-detail-name").textContent = token.name;
+      document.getElementById("token-detail-symbol").textContent = token.symbol;
+      document.getElementById("token-detail-issuer").textContent = state.chain;
+      document.getElementById("token-detail-logo").src = token.logo;
+      document.getElementById("token-detail-logo").alt = token.symbol;
+      document.getElementById("token-detail-address").innerHTML = `${chain.addressShort} <button class="link-btn" type="button" data-copy="${chain.addressFull}">Copy</button><a class="icon-link" href="${chain.explorerUrl}" target="_blank" rel="noreferrer" aria-label="Open in browser" title="Open in browser"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 0 20"></path><path d="M12 2a15.3 15.3 0 0 0 0 20"></path></svg></a>`;
+      Object.entries(chain).forEach(([key, value]) => {
+        const target = document.querySelector(`[data-market-field="${key}"]`);
+        if (target && typeof value === "string") target.textContent = value;
+      });
+    }
+
+    function renderPriceChart() {
+      const chain = currentChainData();
+      const status = chain.depeg.status;
+      const statusClass = status === "Critical" ? "severe" : status === "Warning" ? "medium" : "low";
+      const statusEl = document.getElementById("depeg-status");
+      statusEl.className = `risk-badge ${statusClass}`;
+      statusEl.textContent = status;
+
+      const priceValue = Number.parseFloat(String(chain.depeg.price).replace(/[^\d.-]/g, ""));
+      const deviationValue = Number.parseFloat(String(chain.depeg.deviation).replace(/[^\d.-]/g, ""));
+      const isCritical = status === "Critical";
+      const isWarning = status === "Warning";
+      const minY = isCritical ? 0.965 : 0.988;
+      const maxY = isCritical ? 1.035 : 1.012;
+      const plot = { left: 70, right: 820, top: 40, bottom: 230, width: 750, height: 190 };
+      const xScale = (index, total) => plot.left + (index / (total - 1)) * plot.width;
+      const yScale = (value) => plot.bottom - ((value - minY) / (maxY - minY)) * plot.height;
+      const trendPoints = [0.9990, 0.9994, 1.0002, 0.9992, 0.9982, priceValue + (1 - priceValue) * .25, priceValue];
+      const pointString = trendPoints.map((value, index) => `${index === 0 ? "M" : "L"} ${xScale(index, trendPoints.length).toFixed(1)} ${yScale(value).toFixed(1)}`).join(" ");
+      const latestX = xScale(trendPoints.length - 1, trendPoints.length);
+      const latestY = yScale(priceValue);
+      const pegY = yScale(1);
+      const normalTopY = yScale(1.005);
+      const normalBottomY = yScale(0.995);
+      const normalBandHeight = normalBottomY - normalTopY;
+      const markerColor = isCritical ? "#dc2626" : isWarning ? "#f59e0b" : "#22c55e";
+      const statusHelper = isCritical ? "Outside critical range" : isWarning ? "Outside normal range" : "Within normal range";
+      const deviationColor = deviationValue < 0 ? "#b91c1c" : deviationValue > 0 ? "#047857" : "#0f172a";
+
+      document.getElementById("price-chart").innerHTML = `
+        <div class="price-chart-shell">
+          <div class="price-chart-metrics">
+            <div class="price-chart-metric">
+              <p class="price-chart-metric-label">Current Price</p>
+              <p class="price-chart-metric-value">${chain.depeg.price}</p>
+              <div class="price-chart-metric-sub">Latest observed price</div>
+            </div>
+            <div class="price-chart-metric">
+              <p class="price-chart-metric-label">Deviation from Peg</p>
+              <p class="price-chart-metric-value" style="color:${deviationColor}">${chain.depeg.deviation}</p>
+              <div class="price-chart-metric-sub">Compared with 1.0000 USD</div>
+            </div>
+            <div class="price-chart-metric">
+              <p class="price-chart-metric-label">De-peg Status</p>
+              <p class="price-chart-metric-value">${status}</p>
+              <div class="price-chart-metric-sub">${statusHelper}</div>
+            </div>
+            <div class="price-chart-metric">
+              <p class="price-chart-metric-label">Last Updated</p>
+              <p class="price-chart-metric-value">08:00 UTC</p>
+              <div class="price-chart-metric-sub">Data as of current snapshot</div>
+            </div>
+          </div>
+          <div class="price-chart-card">
+            <svg class="price-chart-svg" viewBox="0 0 860 280" role="img" aria-label="Price trend with de-peg monitoring">
+              <defs>
+                <filter id="priceShadow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#2563eb" flood-opacity=".16"></feDropShadow>
+                </filter>
+              </defs>
+              <rect x="0" y="0" width="860" height="280" rx="12" fill="#f8fafc"></rect>
+              <g stroke="#e2e8f0" stroke-width="1">
+                <line x1="${plot.left}" y1="${plot.top}" x2="${plot.right}" y2="${plot.top}"></line>
+                <line x1="${plot.left}" y1="${(plot.top + plot.bottom) / 2}" x2="${plot.right}" y2="${(plot.top + plot.bottom) / 2}"></line>
+                <line x1="${plot.left}" y1="${plot.bottom}" x2="${plot.right}" y2="${plot.bottom}"></line>
+              </g>
+              <rect x="${plot.left}" y="${normalTopY}" width="${plot.width}" height="${normalBandHeight}" fill="#22c55e" opacity=".10" rx="6"></rect>
+              <line x1="${plot.left}" y1="${pegY}" x2="${plot.right}" y2="${pegY}" stroke="#64748b" stroke-width="1.4" stroke-dasharray="6 6"></line>
+              <text x="${plot.left}" y="${pegY - 8}" fill="#475569" font-size="12" font-weight="700">Peg Price: 1.0000 USD</text>
+              <path d="${pointString}" fill="none" stroke="#2563eb" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" filter="url(#priceShadow)"></path>
+              <circle cx="${latestX}" cy="${latestY}" r="7" fill="${markerColor}" stroke="#ffffff" stroke-width="3">
+                <title>Timestamp: 2026-05-26 08:00 UTC | Price: ${chain.depeg.price} | Deviation: ${chain.depeg.deviation} | Status: ${status}</title>
+              </circle>
+              <text x="${Math.min(latestX - 6, 750)}" y="${latestY - 16}" text-anchor="end" fill="#0f172a" font-size="12" font-weight="800">Latest ${chain.depeg.price}</text>
+              <text x="14" y="${plot.top + 4}" fill="#64748b" font-size="12">${maxY.toFixed(4)}</text>
+              <text x="14" y="${pegY + 4}" fill="#64748b" font-size="12">1.0000</text>
+              <text x="14" y="${plot.bottom + 4}" fill="#64748b" font-size="12">${minY.toFixed(4)}</text>
+              <text x="${plot.left}" y="260" fill="#64748b" font-size="12">Start</text>
+              <text x="${plot.right}" y="260" text-anchor="end" fill="#64748b" font-size="12">Latest</text>
+            </svg>
+            <div class="price-chart-legend">
+              <span class="price-chart-legend-item"><span class="price-chart-legend-line dashed"></span>Peg Price</span>
+              <span class="price-chart-legend-item"><span class="price-chart-legend-band"></span>Normal Range +/-0.5%</span>
+              <span class="price-chart-legend-item"><span class="price-chart-legend-dot" style="background:${markerColor}"></span>Latest Price</span>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderCategoryOptions() {
+      const categories = [...new Set(riskRows.filter((row) => row.token === state.token && row.chain === state.chain).map((row) => row.category))].sort();
+      document.getElementById("category-options").innerHTML = categories.map((category) => `<label class="check-option"><input type="checkbox" data-category-filter value="${category}"> ${category}</label>`).join("") + `<div class="dropdown-actions"><button class="link-btn" type="button" data-clear-category-filter>Clear</button></div>`;
+    }
+
+    function updateCategoryButton() {
+      const selected = selectedCategories();
+      let label = "All";
+      if (selected.length === 1) label = selected[0];
+      if (selected.length > 1) label = `${selected[0]} (+${selected.length - 1})`;
+      document.getElementById("entity-category-button").textContent = `Entity Category: ${label}`;
+    }
+
+    function renderRiskChart() {
+      const rows = filteredRiskRows();
+      const summary = document.getElementById("risk-summary");
+      const plot = document.getElementById("risk-plot");
+      const tableHead = document.getElementById("risk-table-head");
+      const tableBody = document.getElementById("risk-table-body");
+      const drilldownHint = document.getElementById("risk-drilldown-hint");
+      const drilldownPath = document.getElementById("risk-drilldown-path");
+      const drilldownHelp = document.getElementById("risk-drilldown-help");
+      const resetButton = document.getElementById("global-risk-reset");
+      const hasRiskFilter = riskState.level !== "risk";
+      resetButton?.classList.toggle("show", hasRiskFilter);
+      document.getElementById("risk-y-axis").textContent = `Y-axis: ${state.unit}`;
+      document.getElementById("risk-y-ticks").innerHTML = ["100%", "75%", "50%", "25%", "0"].map((tick) => `<span>${tick}</span>`).join("");
+
+      const riskSummaryItems = riskLevels.map((risk) => {
+        const scoped = rows.filter((row) => row.risk === risk);
+        return {
+          key: risk,
+          label: riskNames[risk],
+          color: riskColors[risk],
+          amount: scoped.reduce((sum, row) => sum + row.amount, 0),
+          value: scoped.reduce((sum, row) => sum + row.value, 0),
+          transfers: scoped.reduce((sum, row) => sum + row.transfers, 0),
+          sent: scoped.reduce((sum, row) => sum + row.sent, 0),
+          received: scoped.reduce((sum, row) => sum + row.received, 0),
+          drill: risk
+        };
+      });
+
+      summary.innerHTML = riskSummaryItems.map((item) => {
+        const active = item.key === riskState.risk;
+        const title = active ? "Click again to clear this filter" : `Filter by ${item.label}`;
+        return `<button class="risk-summary-card${active ? " active" : ""}" type="button" data-risk-filter="${item.key}" aria-pressed="${active}" title="${title}"><span class="legend-name"><i class="dot" style="background:${item.color}"></i>${item.label}</span><strong>${formatRiskValue(item)}</strong></button>`;
+      }).join("");
+
+      let chartItems = [];
+      let tableRows = [];
+      if (riskState.level === "risk") {
+        drilldownHint.classList.remove("show");
+        chartItems = riskSummaryItems;
+        tableHead.innerHTML = "<th>Entity Risk Group</th><th>Token Amount</th><th>Value USD</th><th>Percentage</th><th>Transfer Count</th><th>Sent</th><th>Received</th>";
+        tableRows = riskSummaryItems;
+      } else if (riskState.level === "category") {
+        const scoped = rows.filter((row) => row.risk === riskState.risk);
+        drilldownHint.classList.add("show");
+        drilldownPath.innerHTML = `Drill-down: <strong>${riskNames[riskState.risk]}</strong> <span>/</span> Entity Category`;
+        drilldownHelp.textContent = "Click a row to view entities under the selected category.";
+        chartItems = groupRows(scoped, "category").map((row) => ({ ...row, key: row.category, label: row.category, color: riskColors[riskState.risk], drill: row.category }));
+        tableHead.innerHTML = "<th>Entity Category</th><th>Entity Risk Group</th><th>Token Amount</th><th>Value USD</th><th>Percentage</th><th>Transfer Count</th><th>Sent</th><th>Received</th>";
+        tableRows = chartItems;
+      } else {
+        drilldownHint.classList.add("show");
+        drilldownPath.innerHTML = `Drill-down: <strong>${riskNames[riskState.risk]}</strong> <span>/</span> ${riskState.category} <span>/</span> Entities`;
+        drilldownHelp.textContent = "Entity-level balances under the selected category.";
+        chartItems = rows.filter((row) => row.risk === riskState.risk && row.category === riskState.category).map((row) => ({ ...row, key: row.entity, label: row.entity, color: riskColors[row.risk] }));
+        tableHead.innerHTML = "<th>Entity</th><th>Entity Category</th><th>Entity Risk Group</th><th>Token Amount</th><th>Value USD</th><th>Percentage</th><th>Transfer Count</th><th>Sent</th><th>Received</th>";
+        tableRows = chartItems;
+      }
+
+      const maxTotal = Math.max(...dates.map((_, index) => chartItems.reduce((sum, item) => sum + riskTimeValue(item.value, index), 0)), 1);
+      plot.innerHTML = dates.map((date, index) => {
+        const total = chartItems.reduce((sum, item) => sum + riskTimeValue(item.value, index), 0);
+        const height = Math.max(18, Math.round((total / maxTotal) * 180));
+        const segments = chartItems.map((item) => {
+          const segmentLabel = riskState.level === "risk" ? "Entity Risk Group" : riskState.level === "category" ? "Entity Category" : "Entity";
+          const tooltip = `Date: ${date}<br>${segmentLabel}: ${item.label}<br>Token Amount: ${Number(item.amount).toFixed(2)}M ${state.token}<br>Value USD: ${formatMoney(item.value)}<br>Percentage: ${((item.value / Math.max(maxTotal, 1)) * 100).toFixed(2)}%`;
+          return `<span data-tooltip="${tooltip}" style="height:${Math.max(6, Math.round((riskTimeValue(item.value, index) / Math.max(total, 1)) * height))}px;background:${item.color}"></span>`;
+        }).join("");
+        return `<div class="time-bucket"><button class="bar-stack" type="button" style="height:${height}px">${segments}</button><div class="x-label">${date}</div></div>`;
+      }).join("");
+      const denom = tableRows.reduce((sum, row) => sum + row.value, 0) || 1;
+      tableBody.innerHTML = tableRows.map((row) => {
+        const common = `<td>${Number(row.amount).toFixed(2)}M ${state.token}</td><td>${formatMoney(row.value)}</td><td>${((row.value / denom) * 100).toFixed(2)}%</td><td>${row.transfers.toLocaleString()}</td><td>${formatMoney(row.sent)}</td><td>${formatMoney(row.received)}</td>`;
+        if (riskState.level === "risk") return `<tr class="risk-row" data-risk-filter="${row.drill}"><td class="drilldown-cell"><span class="drilldown-chevron">›</span><span>${row.label}</span><span class="drilldown-arrow">→</span></td>${common}</tr>`;
+        if (riskState.level === "category") return `<tr class="risk-row" data-risk-drill="${row.drill}"><td class="drilldown-cell"><span class="drilldown-chevron">›</span><span>${row.category}</span><span class="drilldown-arrow">→</span></td><td>${riskNames[riskState.risk]}</td>${common}</tr>`;
+        return `<tr class="risk-row"><td>${row.entity}</td><td>${row.category}</td><td>${riskNames[row.risk]}</td>${common}</tr>`;
+      }).join("");
+      bindRiskTooltips();
+      enhanceSortableTables();
+    }
+
+    function bindRiskTooltips() {
+      const tooltip = document.getElementById("plot-tooltip");
+      if (!tooltip) return;
+      document.querySelectorAll("[data-tooltip]").forEach((slice) => {
+        slice.addEventListener("mouseenter", () => {
+          tooltip.innerHTML = slice.dataset.tooltip;
+          tooltip.classList.add("show");
+        });
+        slice.addEventListener("mousemove", (event) => {
+          tooltip.style.left = `${event.clientX}px`;
+          tooltip.style.top = `${event.clientY}px`;
+        });
+        slice.addEventListener("mouseleave", () => {
+          tooltip.classList.remove("show");
+        });
+      });
+    }
+
+    function renderHolders() {
+      const scoped = holders.filter((row) => row.token === state.token && row.chain === state.chain).sort((a, b) => parseFloat(b.value.replace(/[$M]/g, "")) - parseFloat(a.value.replace(/[$M]/g, "")));
+      const marketRows = scoped.map((row, index) => `<tr><td>${index + 1}</td><td>${row.address}</td><td>${row.entity}</td><td>${row.category}</td><td>${row.amount}</td><td>${row.value}</td><td>${row.pct}</td></tr>`).join("");
+      document.getElementById("market-holder-body").innerHTML = marketRows || `<tr class="empty-row visible"><td colspan="7">No holders match the selected Token + Chain.</td></tr>`;
+    }
+
+    function renderBridge() {
+      const rows = bridgeRows.filter((row) => row.token === state.token && row.currentChain === state.chain);
+      const protocols = [...new Set(rows.map((row) => row.protocol))];
+      if (state.protocol !== "all" && !protocols.includes(state.protocol)) state.protocol = "all";
+      document.getElementById("protocol-select").innerHTML = `<option value="all">All Protocols</option>` + protocols.map((protocol) => `<option${protocol === state.protocol ? " selected" : ""}>${protocol}</option>`).join("");
+      const filtered = rows.filter((row) => {
+        return state.protocol === "all" || state.protocol === row.protocol;
+      });
+      const routes = new Map();
+      filtered.forEach((row) => {
+        const key = `${row.protocol}|${row.source}|${row.destination}`;
+        if (!routes.has(key)) routes.set(key, { protocol: row.protocol, source: row.source, destination: row.destination, volume: 0, count: 0, flows: [] });
+        const route = routes.get(key);
+        route.volume += row.volume;
+        route.count += row.count;
+        route.flows.push(row);
+      });
+      const routeRows = Array.from(routes.values()).map((route) => ({ ...route, risk: highestBridgeRisk(route.flows) })).sort((a, b) => b.count - a.count);
+      document.getElementById("bridge-body").innerHTML = routeRows.map((route, index) => {
+        const flowCount = route.flows.length;
+        const detailRows = route.flows.map((flow) => `
+          <tr class="bridge-flow-row">
+            <td>${formatCategoryRisk(flow.fromCat, flow.risk)}</td>
+            <td>${formatCategoryRisk(flow.toCat, flow.risk)}</td>
+            <td class="num">${flow.count.toLocaleString()}</td>
+            <td class="num">${formatMoney(flow.volume)}</td>
+            <td class="num">${((flow.volume / Math.max(route.volume, 1)) * 100).toFixed(1)}%</td>
+          </tr>
+        `).join("");
+        return `
+          <tr class="route-row" data-route-toggle="${index}">
+            <td>
+              <span class="bridge-protocol-cell">
+                <span class="expander" aria-hidden="true">&gt;</span>
+                <span class="bridge-protocol-main">
+                  <span class="bridge-protocol-name">${route.protocol}</span>
+                  <span class="bridge-protocol-sub">${flowCount} entity category flow${flowCount > 1 ? "s" : ""}</span>
+                </span>
+              </span>
+            </td>
+            <td>${route.source}</td>
+            <td>${route.destination}</td>
+            <td class="num">${route.count.toLocaleString()}</td>
+            <td class="num">${formatMoney(route.volume)}</td>
+            <td class="center">${formatShortRiskBadge(route.risk)}</td>
+          </tr>
+          <tr class="bridge-detail-row" data-route-detail="${index}" hidden>
+            <td colspan="6">
+              <div class="bridge-detail">
+                <div class="bridge-nested-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>From Entity Category / Risk</th>
+                        <th>To Entity Category / Risk</th>
+                        <th class="num">Transfer Count</th>
+                        <th class="num">Volume</th>
+                        <th class="num">Percentage</th>
+                      </tr>
+                    </thead>
+                    <tbody>${detailRows}</tbody>
+                  </table>
+                </div>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("") || `<tr class="empty-row visible"><td colspan="6">No bridge routes match the current filters.</td></tr>`;
+      enhanceSortableTables();
+    }
+
+    function renderAlertOptions() {
+      const rules = [...new Set(alerts.filter((row) => row.token === state.token).map((row) => row.rule))];
+      const ruleSelect = document.getElementById("alert-rule");
+      const current = ruleSelect.value || "all";
+      ruleSelect.innerHTML = `<option value="all">All</option>` + rules.map((rule) => `<option${rule === current ? " selected" : ""}>${rule}</option>`).join("");
+    }
+
+    function renderAlerts() {
+      renderAlertOptions();
+      const chain = state.chain;
+      const riskLevel = document.getElementById("alert-risk-level").value;
+      const rule = document.getElementById("alert-rule").value;
+      const filtered = alerts.filter((row) => {
+        return row.token === state.token && row.chain === chain && (riskLevel === "all" || row.risk === riskLevel) && (rule === "all" || row.rule === rule);
+      });
+      document.getElementById("alert-body").innerHTML = filtered.map((row) => {
+        const tx = transactions.find((item) => item.token === row.token && item.chain === row.chain && item.hash === row.hash);
+        return `<tr class="alert-row"><td>${row.hash}</td><td>${tx?.amount || "-"}</td><td>${row.value}</td><td>${row.from}</td><td>${row.to}</td><td><span class="rule-tag">${row.rule}</span></td><td>${formatShortRiskBadge(row.risk)}</td><td>${row.timestamp}</td></tr>`;
+      }).join("") || `<tr class="empty-row visible"><td colspan="8">No alerts match the current filters.</td></tr>`;
+      enhanceSortableTables();
+    }
+
+    function renderTransactions() {
+      const tokenRows = transactions.filter((row) => row.token === state.token).sort((a, b) => b.sortValue - a.sortValue);
+      const chainRows = tokenRows.filter((row) => row.chain === state.chain);
+      document.getElementById("market-transaction-body").innerHTML = chainRows.map((row) => `<tr data-value="${row.sortValue}"><td>${row.hash}</td><td>${row.amount}</td><td>${row.value}</td><td>${row.sender}</td><td>${row.receiver}</td><td><span class="rule-tag">${row.rules}</span></td><td>${formatShortRiskBadge(row.risk)}</td><td>${row.timestamp}</td></tr>`).join("") || `<tr class="empty-row visible"><td colspan="8">No transactions match the selected Token + Chain.</td></tr>`;
+      enhanceSortableTables();
+    }
+
+    function renderAll() {
+      updateChainOptions();
+      renderTokenIdentity();
+      renderPriceChart();
+      renderCategoryOptions();
+      updateCategoryButton();
+      renderRiskChart();
+      renderHolders();
+      renderBridge();
+      renderAlerts();
+      renderTransactions();
+    }
+
+    function closeDropdowns() {
+      document.querySelectorAll(".dropdown.open").forEach((dropdown) => {
+        dropdown.classList.remove("open");
+        dropdown.querySelector("[aria-expanded]")?.setAttribute("aria-expanded", "false");
+      });
+    }
+
+    function copyText(button) {
+      if (navigator.clipboard?.writeText) navigator.clipboard.writeText(button.dataset.copy).catch(() => {});
+      const previous = button.textContent;
+      button.textContent = "Copied";
+      button.disabled = true;
+      window.setTimeout(() => {
+        button.textContent = previous;
+        button.disabled = false;
+      }, 1500);
+      showToast("Contract address copied");
+    }
+
+    function sortValue(text) {
+      const trimmed = text.trim();
+      const lower = trimmed.toLowerCase();
+      if (riskRank[lower]) return riskRank[lower];
+      const numeric = parseFloat(trimmed.replace(/[$,%]/g, "").replace(/,/g, ""));
+      if (!Number.isNaN(numeric)) {
+        if (/b/i.test(trimmed)) return numeric * 1000000000;
+        if (/m/i.test(trimmed)) return numeric * 1000000;
+        if (/k/i.test(trimmed)) return numeric * 1000;
+        return numeric;
+      }
+      const time = Date.parse(trimmed);
+      return Number.isNaN(time) ? lower : time;
+    }
+
+    function sortTable(table, columnIndex, direction) {
+      const tbody = table.tBodies[0];
+      if (!tbody) return;
+      const rows = Array.from(tbody.querySelectorAll("tr:not(.empty-row)"));
+      rows.sort((a, b) => {
+        const aValue = sortValue(a.cells[columnIndex]?.textContent || "");
+        const bValue = sortValue(b.cells[columnIndex]?.textContent || "");
+        if (typeof aValue === "number" && typeof bValue === "number") return direction === "asc" ? aValue - bValue : bValue - aValue;
+        return direction === "asc" ? String(aValue).localeCompare(String(bValue)) : String(bValue).localeCompare(String(aValue));
+      });
+      rows.forEach((row) => tbody.appendChild(row));
+      const empty = tbody.querySelector(".empty-row");
+      if (empty) tbody.appendChild(empty);
+    }
+
+    function enhanceSortableTables() {
+      document.querySelectorAll("table").forEach((table) => {
+        if (table.hasAttribute("data-no-sort") || table.closest(".bridge-detail")) return;
+        table.querySelectorAll("thead th").forEach((th, index) => {
+          const label = th.textContent.trim() || th.querySelector(".sort-header span")?.textContent?.trim() || "";
+          const lower = label.toLowerCase();
+          th.classList.toggle("num", /amount|value|percentage|balance|transfers|sent|received|supply|holders|cap|volume|rank|count/.test(lower));
+          th.classList.toggle("center", /risk|status/.test(lower));
+          Array.from(table.tBodies[0]?.rows || []).forEach((row) => {
+            const cell = row.cells[index];
+            if (!cell) return;
+            cell.classList.toggle("num", th.classList.contains("num"));
+            cell.classList.toggle("center", th.classList.contains("center"));
+            cell.classList.toggle("hash", /hash|wallet|address/.test(lower));
+          });
+          if (th.querySelector(".sort-header")) return;
+          th.innerHTML = `<button class="sort-header" type="button" data-sort-column="${index}" aria-label="Sort by ${label}"><span>${label}</span><span class="sort-icon" aria-hidden="true"></span></button>`;
+        });
+      });
+    }
+
+    function resetRiskFilter(message = "Risk filter cleared") {
+      riskState = { level: "risk", risk: null, category: null };
+      renderRiskChart();
+      showToast(message);
+    }
+
+    function toggleRiskFilter(risk) {
+      if (!risk) return;
+      if (riskState.risk === risk) {
+        resetRiskFilter();
+        return;
+      }
+      riskState = { level: "category", risk, category: null };
+      renderRiskChart();
+      showToast(`Filtered by ${riskNames[risk]}`);
+    }
+
+    function drillRisk(key) {
+      if (!key || !riskState.risk) return;
+      if (riskState.category === key) {
+        resetRiskFilter();
+        return;
+      }
+      riskState = { level: "entity", risk: riskState.risk, category: key };
+      renderRiskChart();
+      showToast(`Filtered by ${key}`);
+    }
+
+    document.addEventListener("click", (event) => {
+      const dropdownToggle = event.target.closest("[data-dropdown-toggle]");
+      if (dropdownToggle) {
+        const dropdown = document.getElementById(dropdownToggle.dataset.dropdownToggle);
+        const wasOpen = dropdown.classList.contains("open");
+        closeDropdowns();
+        dropdown.classList.toggle("open", !wasOpen);
+        dropdownToggle.setAttribute("aria-expanded", String(!wasOpen));
+        return;
+      }
+      const tokenJump = event.target.closest("[data-token-tab-jump]");
+      if (tokenJump) {
+        showTokenTab(tokenJump.dataset.tokenTabJump);
+        return;
+      }
+      const tokenTab = event.target.closest("[data-token-tab]");
+      if (tokenTab) {
+        showTokenTab(tokenTab.dataset.tokenTab);
+        return;
+      }
+      const copy = event.target.closest("[data-copy]");
+      if (copy) {
+        copyText(copy);
+        return;
+      }
+      const riskFilter = event.target.closest("[data-risk-filter]");
+      if (riskFilter) {
+        toggleRiskFilter(riskFilter.dataset.riskFilter);
+        return;
+      }
+      const riskDrill = event.target.closest("[data-risk-drill]");
+      if (riskDrill) {
+        drillRisk(riskDrill.dataset.riskDrill);
+        return;
+      }
+      const clearRisk = event.target.closest("[data-clear-risk]");
+      if (clearRisk) {
+        resetRiskFilter("All risk filters reset");
+        return;
+      }
+      const clearCategoryFilter = event.target.closest("[data-clear-category-filter]");
+      if (clearCategoryFilter) {
+        document.querySelectorAll("[data-category-filter]").forEach((input) => input.checked = false);
+        updateCategoryButton();
+        riskState = { level: "risk", risk: null, category: null };
+        renderRiskChart();
+        return;
+      }
+      const routeRow = event.target.closest(".route-row");
+      if (routeRow) {
+        const detail = document.querySelector(`[data-route-detail="${routeRow.dataset.routeToggle}"]`);
+        const expanded = !detail?.hidden;
+        document.querySelectorAll(".route-row").forEach((row) => row.classList.remove("active", "expanded"));
+        document.querySelectorAll("[data-route-detail]").forEach((row) => row.hidden = true);
+        if (detail && expanded) {
+          showToast("Bridge route collapsed");
+        } else if (detail) {
+          detail.hidden = false;
+          routeRow.classList.add("active", "expanded");
+          showToast("Bridge route expanded");
+        }
+        return;
+      }
+      const alertRow = event.target.closest(".alert-row");
+      if (alertRow) {
+        document.querySelectorAll(".alert-row").forEach((row) => row.classList.remove("active"));
+        alertRow.classList.add("active");
+        showToast("Alert selected");
+        return;
+      }
+      const sortTransactions = event.target.closest("[data-sort-transactions]");
+      if (sortTransactions) {
+        const body = sortTransactions.closest("section")?.querySelector("tbody") || document.querySelector("#market-transaction-table tbody");
+        if (!body) return;
+        Array.from(body.querySelectorAll("tr")).sort((a, b) => Number(b.dataset.value) - Number(a.dataset.value)).forEach((row) => body.appendChild(row));
+        showToast("Transactions sorted by value");
+        return;
+      }
+      const sortButton = event.target.closest("[data-sort-column]");
+      if (sortButton) {
+        const table = sortButton.closest("table");
+        const nextDirection = sortButton.classList.contains("asc") ? "desc" : "asc";
+        table.querySelectorAll(".sort-header").forEach((button) => button.classList.remove("asc", "desc"));
+        sortButton.classList.add(nextDirection);
+        sortTable(table, Number(sortButton.dataset.sortColumn), nextDirection);
+        return;
+      }
+      const toastTrigger = event.target.closest("[data-toast]");
+      if (toastTrigger) {
+        showToast(toastTrigger.dataset.toast);
+        return;
+      }
+      if (!event.target.closest(".dropdown")) closeDropdowns();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeDropdowns();
+    });
+
+    document.getElementById("token-switcher").addEventListener("change", (event) => {
+      state.token = event.target.value;
+      state.chain = Object.keys(currentToken().chains)[0];
+      state.protocol = "all";
+      riskState = { level: "risk", risk: null, category: null };
+      renderAll();
+      showToast(`${state.token} data loaded`);
+    });
+
+    document.getElementById("chain-select").addEventListener("change", (event) => {
+      state.chain = event.target.value;
+      state.protocol = "all";
+      riskState = { level: "risk", risk: null, category: null };
+      renderAll();
+      showToast(`Chain switched to ${state.chain}`);
+    });
+
+    document.getElementById("range-select").addEventListener("change", (event) => {
+      state.range = event.target.value;
+      renderAll();
+      showToast(`Time Range switched to ${state.range}`);
+    });
+
+    document.getElementById("metric-select").addEventListener("change", (event) => {
+      state.metric = event.target.value;
+      renderRiskChart();
+    });
+
+    document.getElementById("unit-select").addEventListener("change", (event) => {
+      state.unit = event.target.value;
+      renderRiskChart();
+    });
+
+    document.getElementById("category-options").addEventListener("change", () => {
+      updateCategoryButton();
+      riskState = { level: "risk", risk: null, category: null };
+      renderRiskChart();
+    });
+
+    document.getElementById("protocol-select").addEventListener("change", (event) => {
+      state.protocol = event.target.value;
+      renderBridge();
+    });
+
+    document.querySelectorAll("#alert-risk-level, #alert-rule").forEach((control) => {
+      control.addEventListener("input", () => {
+        renderAlerts();
+      });
+      control.addEventListener("change", () => {
+        renderAlerts();
+      });
+    });
+
+    renderAll();
+    enhanceSortableTables();
+  </script>
+</body>
+</html>
