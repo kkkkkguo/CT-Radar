@@ -947,6 +947,27 @@
       letter-spacing: .4px;
     }
 
+    .probe-link {
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 10px;
+      border: 1px solid #bfdbfe;
+      border-radius: 6px;
+      background: #eff6ff;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 800;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .probe-link:hover {
+      border-color: #93c5fd;
+      background: #dbeafe;
+    }
+
     .alert-row.fresh-alert td {
       animation: alertFlash 2.8s ease-out;
     }
@@ -1784,7 +1805,7 @@
               <div class="panel-pad section-head" style="margin:0"><h2>Top 10 Transactions</h2></div>
               <div class="table-wrap">
                 <table id="market-transaction-table">
-                  <thead><tr><th>Tx Hash</th><th>Amount</th><th>Value USD</th><th>Sender</th><th>Receiver</th><th>Triggered Rules</th><th>Risk Level</th><th>Time (UTC)</th></tr></thead>
+                  <thead><tr><th>Tx Hash</th><th>Amount</th><th>Value USD</th><th>Sender</th><th>Receiver</th><th>Triggered Rules</th><th>Risk Level</th><th>Time (UTC)</th><th data-no-sort-column>Action</th></tr></thead>
                   <tbody id="market-transaction-body"></tbody>
                 </table>
               </div>
@@ -1852,7 +1873,7 @@
               </div>
               <div class="table-wrap">
                 <table data-no-sort>
-                  <thead><tr><th>Protocol</th><th>Source Chain</th><th>Destination Chain</th><th class="num">Transfer Count</th><th class="num">Volume</th><th class="center"><span class="protocol-risk-head">Protocol Risk <span class="info-dot" data-tooltip="Protocol Risk is determined by the highest-risk entity category involved in this protocol route.">i</span></span></th></tr></thead>
+                  <thead><tr><th>Protocol</th><th>Source Chain</th><th>Destination Chain</th><th class="num">Transfer Count</th><th class="num">Volume</th><th class="center"><span class="protocol-risk-head">Risk Level <span class="info-dot" data-tooltip="Risk Level is determined by the highest-risk entity category involved in this protocol route.">i</span></span></th></tr></thead>
                   <tbody id="bridge-body"></tbody>
                 </table>
               </div>
@@ -1919,6 +1940,7 @@
     const riskRank = { "severe-risk entities": 4, "high-risk entities": 3, "medium-risk entities": 2, "low-risk entities": 1 };
     const dates = ["May 20", "May 21", "May 22", "May 23", "May 24", "May 25", "May 26"];
     const state = { token: "PYUSD", chain: "Ethereum", range: "Last 24 Hours", metric: "Balance", unit: "Value USD", flow: "all", protocol: "all" };
+    const CT_PROBE_URL = "http://ec2-13-251-106-189.ap-southeast-1.compute.amazonaws.com:3000/";
     let riskState = { level: "risk", risk: null, category: null };
     let alertLiveState = { enabled: true, lastUpdatedAt: Date.now(), sequence: 0 };
 
@@ -2469,8 +2491,8 @@
         const isFresh = row.createdAt && Date.now() - row.createdAt < 18000;
         const newTag = isFresh ? `<span class="new-alert-tag">NEW</span>` : "";
         const rowClasses = ["alert-row", `risk-${row.risk}`, isFresh ? "fresh-alert" : ""].filter(Boolean).join(" ");
-        return `<tr class="${rowClasses}"><td>${row.hash}${newTag}</td><td>${tx?.amount || row.amount || "-"}</td><td>${row.value}</td><td>${row.from}</td><td>${row.to}</td><td><span class="rule-tag">${row.rule}</span></td><td>${formatShortRiskBadge(row.risk)}</td><td>${row.timestamp}</td></tr>`;
-      }).join("") || `<tr class="empty-row visible"><td colspan="8">No alerts match the current filters.</td></tr>`;
+        return `<tr class="${rowClasses}"><td>${row.hash}${newTag}</td><td>${tx?.amount || row.amount || "-"}</td><td>${row.value}</td><td>${row.from}</td><td>${row.to}</td><td><span class="rule-tag">${row.rule}</span></td><td>${formatShortRiskBadge(row.risk)}</td><td>${row.timestamp}</td><td><a class="probe-link" href="${CT_PROBE_URL}" target="_blank" rel="noreferrer" data-open-probe>Investigate</a></td></tr>`;
+      }).join("") || `<tr class="empty-row visible"><td colspan="9">No alerts match the current filters.</td></tr>`;
       enhanceSortableTables();
       updateAlertLiveStatus();
     }
@@ -2559,6 +2581,7 @@
             cell.classList.toggle("center", th.classList.contains("center"));
             cell.classList.toggle("hash", /hash|wallet|address/.test(lower));
           });
+          if (th.hasAttribute("data-no-sort-column")) return;
           if (th.querySelector(".sort-header")) return;
           th.innerHTML = `<button class="sort-header" type="button" data-sort-column="${index}" aria-label="Sort by ${label}"><span>${label}</span><span class="sort-icon" aria-hidden="true"></span></button>`;
         });
@@ -2654,6 +2677,11 @@
           routeRow.classList.add("active", "expanded");
           showToast("Bridge route expanded");
         }
+        return;
+      }
+      const openProbe = event.target.closest("[data-open-probe]");
+      if (openProbe) {
+        showToast("Investigating in CT Probe");
         return;
       }
       const alertRow = event.target.closest(".alert-row");
