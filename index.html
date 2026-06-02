@@ -885,6 +885,136 @@
     .route-row,
     .alert-row { cursor: pointer; }
 
+    .alert-live-panel {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 0 4px;
+    }
+
+    .alert-live-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #166534;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, .45);
+      animation: livePulse 1.8s ease-out infinite;
+    }
+
+    .live-paused .live-pill {
+      color: #64748b;
+    }
+
+    .live-paused .live-dot {
+      background: #94a3b8;
+      animation: none;
+      box-shadow: none;
+    }
+
+    .live-divider {
+      color: #cbd5e1;
+      font-weight: 800;
+    }
+
+    .new-alert-tag {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 8px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: var(--blue);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .4px;
+    }
+
+    .alert-row.fresh-alert td {
+      animation: alertFlash 2.8s ease-out;
+    }
+
+    .alert-row.risk-severe td {
+      background: #fff1f2;
+    }
+
+    .alert-row.risk-severe td:first-child {
+      box-shadow: inset 3px 0 0 #dc2626;
+    }
+
+    .alert-row.risk-severe:hover td {
+      background: #ffe4e6;
+    }
+
+    .alert-row.risk-high td {
+      background: #fff7ed;
+    }
+
+    .alert-row.risk-high td:first-child {
+      box-shadow: inset 3px 0 0 #f97316;
+    }
+
+    .alert-row.risk-high:hover td {
+      background: #ffedd5;
+    }
+
+    .alert-row.risk-moderate td {
+      background: #fffbeb;
+    }
+
+    .alert-row.risk-moderate td:first-child {
+      box-shadow: inset 3px 0 0 #f59e0b;
+    }
+
+    .alert-row.risk-moderate:hover td {
+      background: #fef3c7;
+    }
+
+    .alert-row.risk-low td {
+      background: #f7fef9;
+    }
+
+    .alert-row.risk-low td:first-child {
+      box-shadow: inset 3px 0 0 #22c55e;
+    }
+
+    .alert-row.risk-low:hover td {
+      background: #ecfdf5;
+    }
+
+    .alert-row.active td {
+      background: #edf5ff;
+    }
+
+    @keyframes livePulse {
+      0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, .45); }
+      70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+
+    @keyframes alertFlash {
+      0% { background: #eff6ff; }
+      40% { background: #fff7ed; }
+      100% { background: transparent; }
+    }
+
     .risk-row:hover {
       background: #eff6ff;
     }
@@ -1271,9 +1401,8 @@
 
     .toast {
       position: fixed;
-      left: 50%;
-      bottom: 20px;
-      transform: translateX(-50%);
+      top: 74px;
+      right: 24px;
       z-index: 90;
       display: none;
       padding: 10px 14px;
@@ -1523,7 +1652,7 @@
       gap: 8px;
       opacity: 0;
       pointer-events: none;
-      transform: translateX(-50%) translateY(12px);
+      transform: translateY(-8px);
       transition: opacity .2s ease, transform .2s cubic-bezier(.16, 1, .3, 1);
       box-shadow: var(--shadow-lg);
     }
@@ -1531,7 +1660,7 @@
     .toast.show {
       display: flex;
       opacity: 1;
-      transform: translateX(-50%) translateY(0);
+      transform: translateY(0);
     }
 
     @media (max-width: 1060px) {
@@ -1675,11 +1804,11 @@
                     <button class="control" id="entity-category-button" type="button" data-dropdown-toggle="entity-category-dropdown" aria-expanded="false">Entity Category: All</button>
                     <div class="dropdown-menu wide" id="category-options" role="menu" aria-label="Entity Category filter"></div>
                   </div>
-                  <select class="control" id="metric-select" aria-label="Metric">
-                    <option>Balance</option>
-                    <option>Sent</option>
-                    <option>Received</option>
-                    <option>Transfers</option>
+                  <select class="control" id="metric-select" aria-label="Chart metric">
+                    <option value="Balance">Chart: Balance</option>
+                    <option value="Sent">Chart: Sent</option>
+                    <option value="Received">Chart: Received</option>
+                    <option value="Transfers">Chart: Transfers</option>
                   </select>
                   <select class="control" id="unit-select" aria-label="Unit">
                     <option>Token Amount</option>
@@ -1733,6 +1862,13 @@
           <div class="tab-panel" id="tab-alerts">
             <section class="panel" style="box-shadow:none">
               <div class="filter-bar">
+                <div class="alert-live-panel" id="alert-live-panel">
+                  <div class="alert-live-status" aria-live="polite">
+                    <span class="live-pill"><span class="live-dot" aria-hidden="true"></span><span id="alert-live-label">Live</span></span>
+                    <span class="live-divider">·</span>
+                    <span id="alert-last-updated">Updated just now</span>
+                  </div>
+                </div>
                 <div class="filters">
                   <div class="field">
                     <label>Risk Level</label>
@@ -1740,7 +1876,7 @@
                       <option value="all">All</option>
                       <option value="severe">Severe</option>
                       <option value="high">High</option>
-                      <option value="medium">Medium</option>
+                      <option value="moderate">Moderate</option>
                       <option value="low">Low</option>
                     </select>
                   </div>
@@ -1784,6 +1920,7 @@
     const dates = ["May 20", "May 21", "May 22", "May 23", "May 24", "May 25", "May 26"];
     const state = { token: "PYUSD", chain: "Ethereum", range: "Last 24 Hours", metric: "Balance", unit: "Value USD", flow: "all", protocol: "all" };
     let riskState = { level: "risk", risk: null, category: null };
+    let alertLiveState = { enabled: true, lastUpdatedAt: Date.now(), sequence: 0 };
 
     const tokenDetails = {
       PYUSD: {
@@ -1848,6 +1985,8 @@
     const alerts = [
       { timestamp: "2026-05-26 07:42 UTC", token: "PYUSD", chain: "Ethereum", risk: "severe", rule: "Entity Category Rule", summary: "$2.4M transfer to sanctioned entity", hash: "0x8f2a...3b9c", value: "$2.40M", from: "Unknown", to: "OFAC Cluster 18", status: "New" },
       { timestamp: "2026-05-26 06:18 UTC", token: "PYUSD", chain: "Ethereum", risk: "high", rule: "Behavior Rule", summary: "Rapid in-out activity through mixer-adjacent cluster", hash: "0x99be...4f1e", value: "$840K", from: "Mixer Deposit Cluster", to: "Unknown", status: "Watching" },
+      { timestamp: "2026-05-26 05:31 UTC", token: "PYUSD", chain: "Ethereum", risk: "moderate", rule: "Velocity Rule", summary: "Moderate velocity increase from exchange cluster", hash: "0x7bd1...92aa", value: "$260K", amount: "260,420 PYUSD", from: "Exchange Beta", to: "Unknown", status: "New" },
+      { timestamp: "2026-05-26 04:58 UTC", token: "PYUSD", chain: "Ethereum", risk: "low", rule: "Watchlist Rule", summary: "Low-risk monitored wallet activity", hash: "0x2ca8...1f90", value: "$96K", amount: "96,300 PYUSD", from: "Coinbase Hot Wallet", to: "Payment Processor", status: "Watching" },
       { timestamp: "2026-05-25 22:10 UTC", token: "PYUSD", chain: "Solana", risk: "high", rule: "Large Transfer Rule", summary: "Large transfer from stolen-funds cluster", hash: "5GJ9...sL2p", value: "$420K", from: "Exploit Cluster S-14", to: "Unknown", status: "Acknowledged" },
       { timestamp: "2026-05-26 05:07 UTC", token: "USD1", chain: "BNB Chain", risk: "high", rule: "Exposure Rule", summary: "$680K through high-risk exchange bridge flow", hash: "0x1c4d...9a21", value: "$680K", from: "Exchange Beta", to: "LayerZero Bridge", status: "New" },
       { timestamp: "2026-05-26 03:25 UTC", token: "USD1", chain: "TRON", risk: "severe", rule: "Entity Category Rule", summary: "Mixer exposure above configured threshold", hash: "TXa9...3dQp", value: "$510K", from: "TRON Mixer Cluster", to: "Unknown", status: "Watching" }
@@ -1861,11 +2000,63 @@
       { token: "USD1", timestamp: "2026-05-26 03:25 UTC", hash: "TXa9...3dQp", chain: "TRON", amount: "526,300 USD1", value: "$510K", sender: "TRON Mixer Cluster", receiver: "Unknown", rules: "Entity Category Rule", risk: "severe", sortValue: 510000 }
     ];
 
+    const liveAlertTemplates = [
+      { risk: "severe", rule: "Entity Category Rule", value: "$1.18M", amountBase: 1180000, from: "Unknown", to: "Sanctioned Entity Cluster", summary: "New severe entity-category exposure detected" },
+      { risk: "high", rule: "Behavior Rule", value: "$760K", amountBase: 760000, from: "Mixer-adjacent Cluster", to: "Unknown", summary: "Rapid transfer pattern detected" },
+      { risk: "moderate", rule: "Velocity Rule", value: "$310K", amountBase: 310000, from: "Exchange Beta", to: "Unknown", summary: "Moderate velocity increase detected" },
+      { risk: "low", rule: "Watchlist Rule", value: "$84K", amountBase: 84000, from: "Regulated Exchange", to: "Payment Processor", summary: "Low-risk monitored wallet activity" }
+    ];
+
     function showToast(message) {
       toast.textContent = message;
       toast.classList.add("show");
       window.clearTimeout(toast.timer);
       toast.timer = window.setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+
+    function formatLiveTimestamp(date = new Date()) {
+      const pad = (value) => String(value).padStart(2, "0");
+      return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())} UTC`;
+    }
+
+    function updateAlertLiveStatus() {
+      const panel = document.getElementById("alert-live-panel");
+      const label = document.getElementById("alert-live-label");
+      const updated = document.getElementById("alert-last-updated");
+      if (!panel || !label || !updated) return;
+      const elapsed = Math.max(0, Math.floor((Date.now() - alertLiveState.lastUpdatedAt) / 1000));
+      panel.classList.toggle("live-paused", !alertLiveState.enabled);
+      label.textContent = alertLiveState.enabled ? "Live" : "Paused";
+      updated.textContent = elapsed < 3 ? "Updated just now" : `Updated ${elapsed}s ago`;
+    }
+
+    function injectLiveAlert() {
+      if (!alertLiveState.enabled) return;
+      const template = liveAlertTemplates[alertLiveState.sequence % liveAlertTemplates.length];
+      alertLiveState.sequence += 1;
+      const shortId = Math.random().toString(16).slice(2, 6);
+      const suffix = Math.random().toString(16).slice(2, 6);
+      const amount = Math.round(template.amountBase * (0.9 + Math.random() * 0.2));
+      alerts.unshift({
+        timestamp: formatLiveTimestamp(),
+        token: state.token,
+        chain: state.chain,
+        risk: template.risk,
+        rule: template.rule,
+        summary: template.summary,
+        hash: state.chain === "TRON" ? `TX${shortId}...${suffix}` : `0x${shortId}...${suffix}`,
+        value: template.value,
+        amount: `${amount.toLocaleString()} ${state.token}`,
+        from: template.from,
+        to: template.to,
+        status: "New",
+        createdAt: Date.now()
+      });
+      alertLiveState.lastUpdatedAt = Date.now();
+      renderAlerts();
+      if (["severe", "high", "moderate"].includes(template.risk)) {
+        showToast(`New ${template.risk} alert received`);
+      }
     }
 
     function currentToken() {
@@ -1886,12 +2077,12 @@
     }
 
     function formatShortRiskBadge(risk) {
-      const label = risk === "medium" ? "medium" : risk;
+      const label = risk === "medium" ? "moderate" : risk;
       return `<span class="risk-badge ${risk}">${label}</span>`;
     }
 
     function bridgeRiskRank(risk) {
-      return { low: 1, medium: 2, high: 3, severe: 4 }[risk] || 0;
+      return { low: 1, medium: 2, moderate: 2, high: 3, severe: 4 }[risk] || 0;
     }
 
     function highestBridgeRisk(rows) {
@@ -2118,7 +2309,7 @@
       if (riskState.level === "risk") {
         drilldownHint.classList.remove("show");
         chartItems = riskSummaryItems;
-        tableHead.innerHTML = "<th>Entity Risk Group</th><th>Token Amount</th><th>Value USD</th><th>Percentage</th><th>Transfer Count</th><th>Sent</th><th>Received</th>";
+        tableHead.innerHTML = "<th>Entity Risk Group</th><th>Amount</th><th>Balance(USD)</th><th>Percentage</th><th>Transfer Count</th><th>Sent</th><th>Received</th>";
         tableRows = riskSummaryItems;
       } else if (riskState.level === "category") {
         const scoped = rows.filter((row) => row.risk === riskState.risk);
@@ -2126,14 +2317,14 @@
         drilldownPath.innerHTML = `Drill-down: <strong>${riskNames[riskState.risk]}</strong> <span>/</span> Entity Category`;
         drilldownHelp.textContent = "Click a row to view entities under the selected category.";
         chartItems = groupRows(scoped, "category").map((row) => ({ ...row, key: row.category, label: row.category, color: riskColors[riskState.risk], drill: row.category }));
-        tableHead.innerHTML = "<th>Entity Category</th><th>Entity Risk Group</th><th>Token Amount</th><th>Value USD</th><th>Percentage</th><th>Transfer Count</th><th>Sent</th><th>Received</th>";
+        tableHead.innerHTML = "<th>Entity Category</th><th>Entity Risk Group</th><th>Amount</th><th>Balance(USD)</th><th>Percentage</th><th>Transfer Count</th><th>Sent</th><th>Received</th>";
         tableRows = chartItems;
       } else {
         drilldownHint.classList.add("show");
         drilldownPath.innerHTML = `Drill-down: <strong>${riskNames[riskState.risk]}</strong> <span>/</span> ${riskState.category} <span>/</span> Entities`;
         drilldownHelp.textContent = "Entity-level balances under the selected category.";
         chartItems = rows.filter((row) => row.risk === riskState.risk && row.category === riskState.category).map((row) => ({ ...row, key: row.entity, label: row.entity, color: riskColors[row.risk] }));
-        tableHead.innerHTML = "<th>Entity</th><th>Entity Category</th><th>Entity Risk Group</th><th>Token Amount</th><th>Value USD</th><th>Percentage</th><th>Transfer Count</th><th>Sent</th><th>Received</th>";
+        tableHead.innerHTML = "<th>Entity</th><th>Entity Category</th><th>Entity Risk Group</th><th>Amount</th><th>Balance(USD)</th><th>Percentage</th><th>Transfer Count</th><th>Sent</th><th>Received</th>";
         tableRows = chartItems;
       }
 
@@ -2275,9 +2466,13 @@
       });
       document.getElementById("alert-body").innerHTML = filtered.map((row) => {
         const tx = transactions.find((item) => item.token === row.token && item.chain === row.chain && item.hash === row.hash);
-        return `<tr class="alert-row"><td>${row.hash}</td><td>${tx?.amount || "-"}</td><td>${row.value}</td><td>${row.from}</td><td>${row.to}</td><td><span class="rule-tag">${row.rule}</span></td><td>${formatShortRiskBadge(row.risk)}</td><td>${row.timestamp}</td></tr>`;
+        const isFresh = row.createdAt && Date.now() - row.createdAt < 18000;
+        const newTag = isFresh ? `<span class="new-alert-tag">NEW</span>` : "";
+        const rowClasses = ["alert-row", `risk-${row.risk}`, isFresh ? "fresh-alert" : ""].filter(Boolean).join(" ");
+        return `<tr class="${rowClasses}"><td>${row.hash}${newTag}</td><td>${tx?.amount || row.amount || "-"}</td><td>${row.value}</td><td>${row.from}</td><td>${row.to}</td><td><span class="rule-tag">${row.rule}</span></td><td>${formatShortRiskBadge(row.risk)}</td><td>${row.timestamp}</td></tr>`;
       }).join("") || `<tr class="empty-row visible"><td colspan="8">No alerts match the current filters.</td></tr>`;
       enhanceSortableTables();
+      updateAlertLiveStatus();
     }
 
     function renderTransactions() {
@@ -2465,7 +2660,7 @@
       if (alertRow) {
         document.querySelectorAll(".alert-row").forEach((row) => row.classList.remove("active"));
         alertRow.classList.add("active");
-        showToast("Alert selected");
+        showToast("Investigate further in CT Monitor");
         return;
       }
       const sortTransactions = event.target.closest("[data-sort-transactions]");
@@ -2552,6 +2747,8 @@
 
     renderAll();
     enhanceSortableTables();
+    window.setInterval(updateAlertLiveStatus, 1000);
+    window.setInterval(injectLiveAlert, 14000);
   </script>
 </body>
 </html>
